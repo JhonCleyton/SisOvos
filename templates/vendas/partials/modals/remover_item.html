@@ -1,0 +1,36 @@
+<!-- Modal Remover Item -->
+<div class="modal fade" id="removerItemModal" tabindex="-1" aria-labelledby="removerItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="removerItemModalLabel">
+                    <i class="bi bi-exclamation-triangle"></i> Confirmar Remoção
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form id="formRemoverItem" action="" method="POST">
+                <div class="modal-body">
+                    <p>Tem certeza que deseja remover este item da venda?</p>
+                    <div class="alert alert-warning mb-0">
+                        <i class="bi bi-exclamation-triangle-fill"></i> 
+                        <strong>Atenção:</strong> Esta ação não pode ser desfeita.
+                    </div>
+                    <div class="mt-3">
+                        <strong>Produto:</strong> <span id="remover_produto_nome">---</span><br>
+                        <strong>Quantidade:</strong> <span id="remover_quantidade">0</span> 
+                        <span id="remover_unidade_medida">---</span><br>
+                        <strong>Valor:</strong> R$ <span id="remover_valor">0,00</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Remover Item
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

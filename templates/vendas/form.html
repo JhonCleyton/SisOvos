@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Editar' if venda else 'Nova' }} Venda{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">
+                        <i class="bi bi-cart-plus"></i>
+                        {{ 'Editar' if venda else 'Nova' }} Venda de Ovos
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="vendaForm">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.cliente_id.label(class="form-label") }}
+                                    {{ form.cliente_id(class="form-select" + (' is-invalid' if form.cliente_id.errors else '')) }}
+                                    {% if form.cliente_id.errors %}
+                                        <div class="invalid-feedback">
+                                            {{ form.cliente_id.errors[0] }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="data_venda" class="form-label">Data da Venda</label>
+                                    <input type="datetime-local" class="form-control" id="data_venda" name="data_venda" 
+                                           value="{{ form.data_venda.data.strftime('%Y-%m-%dT%H:%M') if form.data_venda.data else '' }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    {{ form.forma_pagamento.label(class="form-label") }}
+                                    {{ form.forma_pagamento(class="form-select" + (' is-invalid' if form.forma_pagamento.errors else '')) }}
+                                    {% if form.forma_pagamento.errors %}
+                                        <div class="invalid-feedback">
+                                            {{ form.forma_pagamento.errors[0] }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    {{ form.observacoes.label(class="form-label") }}
+                                    {{ form.observacoes(class="form-control" + (' is-invalid' if form.observacoes.errors else ''), rows=2) }}
+                                    {% if form.observacoes.errors %}
+                                        <div class="invalid-feedback">
+                                            {{ form.observacoes.errors[0] }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Itens da Venda</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Produto</th>
+                                                <th width="200">Quantidade (caixas)</th>
+                                                <th width="200">Preço Unitário</th>
+                                                <th width="200">Subtotal</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="itens-container">
+                                            {% for produto in produtos_disponiveis %}
+                                            <tr data-produto-id="{{ produto.id }}">
+                                                <td>
+                                                    <input type="hidden" name="produtos[{{ loop.index0 }}][id]" value="{{ produto.id }}">
+                                                    <input type="hidden" name="produtos[{{ loop.index0 }}][preco_unitario]" value="{{ '%.2f'|format(produto.preco_venda) }}">
+                                                    <h5 class="mb-1">{{ produto.nome }}</h5>
+                                                    <div class="text-muted small">
+                                                        Estoque disponível: {{ '%.0f'|format(produto.estoque_atual) }} unidades 
+                                                        ({{ '%.1f'|format(produto.estoque_atual) }} caixas)
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="input-group">
+                                                        <input type="number" 
+                                                               name="produtos[{{ loop.index0 }}][quantidade]" 
+                                                               class="form-control quantidade" 
+                                                               min="0" 
+                                                               step="0.1" 
+                                                               value="0.0" 
+                                                               data-produto-id="{{ produto.id }}" 
+                                                               onchange="atualizarSubtotal({{ produto.id }})" 
+                                                               required>
+                                                        <span class="input-group-text">cx</span>
+                                                    </div>
+                                                    <div class="text-muted small mt-1">
+                                                        <span class="quantidade-unidades" data-produto-id="{{ produto.id }}">0 caixas</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text">R$</span>
+                                                        <input type="text" 
+                                                               class="form-control preco-unitario text-end" 
+                                                               value="{{ '%.2f'|format(produto.preco_venda) }}" 
+                                                               data-produto-id="{{ produto.id }}" 
+                                                               readonly>
+                                                    </div>
+                                                </td>
+                                                <td class="text-end">
+                                                    <span class="h6 mb-0">R$ <span class="subtotal" data-produto-id="{{ produto.id }}">0,00</span></span>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Resumo da venda -->
+                        <div class="row">
+                            <div class="col-md-4 offset-md-8">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between mb-3">
+                                            <span class="fw-bold">Total:</span>
+                                            <span class="h5 text-primary" id="total-venda">R$ 0,00</span>
+                                        </div>
+                                        <div class="d-grid gap-2">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="bi bi-check-lg"></i> Finalizar Venda
+                                            </button>
+                                            <a href="{{ url_for('main.listar_vendas') }}" class="btn btn-outline-secondary">
+                                                <i class="bi bi-x-lg"></i> Cancelar
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Função para formatar valores monetários
+    function formatarMoeda(valor) {
+        return parseFloat(valor || 0).toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+
+    // Função para converter valor formatado para número
+    function parseMoeda(valor) {
+        if (!valor) return 0;
+        return parseFloat(valor.toString().replace(/\./g, '').replace(',', '.'));
+    }
+
+    // Função para atualizar a exibição da quantidade em caixas
+    function atualizarQuantidadeUnidades(input) {
+        const quantidadeCaixas = parseFloat(input.value) || 0;
+        const produtoId = input.dataset.produtoId;
+        
+        const spanUnidades = document.querySelector(`.quantidade-unidades[data-produto-id="${produtoId}"]`);
+        if (spanUnidades) {
+            spanUnidades.textContent = `${quantidadeCaixas} caixa${quantidadeCaixas !== 1 ? 's' : ''}`;
+        }
+        
+        return quantidadeCaixas;
+    }
+
+    // Função para atualizar o subtotal de um produto
+    function atualizarSubtotal(produtoId) {
+        const quantidadeInput = document.querySelector(`input.quantidade[data-produto-id="${produtoId}"]`);
+        const precoUnitarioInput = document.querySelector(`.preco-unitario[data-produto-id="${produtoId}"]`);
+        const subtotalSpan = document.querySelector(`.subtotal[data-produto-id="${produtoId}"]`);
+        
+        if (!quantidadeInput || !precoUnitarioInput || !subtotalSpan) return;
+        
+        const quantidade = atualizarQuantidadeUnidades(quantidadeInput);
+        const precoUnitario = parseMoeda(precoUnitarioInput.value);
+        const subtotal = quantidade * precoUnitario;
+        
+        subtotalSpan.textContent = formatarMoeda(subtotal);
+        calcularTotal();
+    }
+
+    // Função para calcular o total da venda
+    function calcularTotal() {
+        let total = 0;
+        
+        // Soma os subtotais de todos os itens
+        document.querySelectorAll('.subtotal').forEach(subtotalSpan => {
+            total += parseMoeda(subtotalSpan.textContent);
+        });
+        
+        // Atualiza o total na interface
+        const totalElement = document.getElementById('total-venda');
+        if (totalElement) {
+            totalElement.textContent = 'R$ ' + formatarMoeda(total);
+        }
+        
+        return total;
+    }
+
+    // Inicialização
+    document.addEventListener('DOMContentLoaded', function() {
+        // Atualiza os totais iniciais
+        document.querySelectorAll('.quantidade').forEach(input => {
+            const produtoId = input.dataset.produtoId;
+            if (produtoId) {
+                atualizarSubtotal(produtoId);
+            }
+        });
+        
+        // Valida o formulário antes de enviar
+        const form = document.getElementById('vendaForm');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                // Verifica se pelo menos um item tem quantidade maior que zero
+                let temItens = false;
+                document.querySelectorAll('.quantidade').forEach(input => {
+                    if (parseFloat(input.value) > 0) {
+                        temItens = true;
+                    }
+                });
+                
+                if (!temItens) {
+                    e.preventDefault();
+                    alert('Adicione pelo menos um item à venda.');
+                    return false;
+                }
+                
+                return true;
+            });
+        }
+    });
+</script>
+{% endblock %}

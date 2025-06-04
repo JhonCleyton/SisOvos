@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Ajuda - {{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="bi bi-question-circle"></i> Ajuda e Suporte
+        </h1>
+    </div>
+
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-lg-3">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Menu de Ajuda</h6>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{{ url_for('main.ajuda') }}" class="list-group-item list-group-item-action {% if request.endpoint == 'main.ajuda' %}active{% endif %}">
+                        <i class="bi bi-house-door"></i> Página Inicial
+                    </a>
+                    <a href="{{ url_for('main.contato') }}" class="list-group-item list-group-item-action {% if request.endpoint == 'main.contato' %}active{% endif %}">
+                        <i class="bi bi-envelope"></i> Contato
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <i class="bi bi-question-circle"></i> Perguntas Frequentes
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <i class="bi bi-book"></i> Documentação
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <i class="bi bi-youtube"></i> Tutoriais em Vídeo
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Conteúdo -->
+        <div class="col-lg-9">
+            {% block ajuda_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-counter {
+        box-shadow: 2px 2px 10px #DADADA;
+        margin: 5px;
+        padding: 20px 10px;
+        background-color: #fff;
+        height: 100px;
+        border-radius: 5px;
+        transition: .3s linear all;
+    }
+    .card-counter:hover {
+        box-shadow: 4px 4px 20px #DADADA;
+        transition: .3s linear all;
+    }
+    .card-counter.primary {
+        background-color: #007bff;
+        color: #FFF;
+    }
+    .card-counter.success {
+        background-color: #28a745;
+        color: #FFF;
+    }  
+    .card-counter.info {
+        background-color: #17a2b8;
+        color: #FFF;
+    }  
+    .card-counter.warning {
+        background-color: #ffc107;
+        color: #000;
+    }  
+    .card-counter i {
+        font-size: 3em;
+        opacity: 0.3;
+    }
+    .card-counter .count-numbers {
+        position: absolute;
+        right: 35px;
+        top: 20px;
+        font-size: 24px;
+        display: block;
+    }
+    .card-counter .count-name {
+        position: absolute;
+        right: 35px;
+        top: 55px;
+        text-transform: capitalize;
+        opacity: 0.8;
+        display: block;
+        font-size: 14px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Dashboard</h1>
+        <span class="text-muted">{{ hoje }}</span>
+    </div>
+
+    <!-- Cards de Resumo -->
+    <div class="row">
+        <!-- Estoque Atual -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Estoque Atual</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ "%.1f"|format(produto.estoque_atual) }} caixas
+                                <small class="text-muted">({{ "%.0f"|format(produto.estoque_atual) }} unidades)</small>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-egg fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vendas do Mês -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Vendas do Mês</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                R$ {{ "%.2f"|format(total_vendas_mes) }}
+                                <small class="text-muted">({{ "%.1f"|format(total_duzias_mes) }} caixas)</small>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vendas de Hoje -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Vendas de Hoje</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                R$ {{ "%.2f"|format(total_vendas_hoje) }}
+                                <small class="text-muted">({{ "%.1f"|format(total_duzias_hoje) }} caixas)</small>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-shopping-cart fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Movimentação de Hoje -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Estoque Atual</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ "%.1f"|format(produto.estoque_atual) }} cx
+                                <small class="text-muted">({{ produto.estoque_atual }} unidades)</small>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exchange-alt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico e Últimas Vendas -->
+    <div class="row">
+        <!-- Gráfico de Vendas -->
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Vendas dos Últimos 7 Dias</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="vendasChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Últimas Vendas -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Últimas Vendas</h6>
+                    <a href="{{ url_for('main.listar_vendas') }}" class="btn btn-sm btn-primary">Ver Todas</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th class="text-end">Valor</th>
+                                    <th class="text-end">Qtd</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for venda in ultimas_vendas %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('main.visualizar_venda', id=venda.id) }}">
+                                            {{ venda.cliente.nome|truncate(15) }}
+                                        </a>
+                                    </td>
+                                    <td class="text-end">R$ {{ "%.2f"|format(venda.valor_total) }}</td>
+                                    <td class="text-end">{{ "%.1f"|format(venda.itens[0].quantidade) }} cx</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center">Nenhuma venda encontrada</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Page level plugins -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// Dados para o gráfico
+var dadosGrafico = JSON.parse('{{ dados_grafico|tojson|safe }}');
+var labels = [];
+var valores = [];
+
+// Processa os dados para o gráfico
+dadosGrafico.forEach(function(item) {
+    labels.push(item.data);
+    valores.push(item.total);
+});
+
+// Gráfico de Vendas
+document.addEventListener('DOMContentLoaded', function() {
+    var ctx = document.getElementById('vendasChart');
+    if (ctx) {
+        var myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Valor das Vendas (R$)',
+                    data: valores,
+                    backgroundColor: 'rgba(78, 115, 223, 0.5)',
+                    borderColor: 'rgba(78, 115, 223, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'R$ ' + value.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'R$ ' + context.raw.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

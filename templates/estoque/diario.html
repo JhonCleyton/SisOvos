@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Controle de Estoque Diário{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="bi bi-clipboard2-data"></i> Controle de Estoque Diário
+            </h1>
+            <p class="text-muted">
+                <i class="bi bi-calendar3"></i> {{ estoque.data.strftime('%d/%m/%Y') }}
+            </p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-box-seam"></i> Estoque do Dia
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="estoqueForm">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Estoque Inicial</label>
+                            <input type="text" class="form-control bg-light" 
+                                   value="{{ '%.0f'|format(estoque.estoque_inicial) }} unidades" readonly>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.entrada.label(class="form-label") }}
+                            {{ form.entrada(class="form-control", min="0", step="1") }}
+                            <div class="form-text">Quantidade de ovos que entraram no estoque hoje.</div>
+                            {% if form.entrada.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.entrada.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Saída (unidades)</label>
+                            <input type="number" class="form-control bg-light" 
+                                   value="{{ '%.0f'|format(estoque.saida) }}" readonly>
+                            <div class="form-text">Quantidade de ovos vendidos hoje.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Estoque Final</label>
+                            <input type="text" class="form-control bg-light fw-bold" 
+                                   value="{{ '%.0f'|format(estoque.estoque_final) }} unidades" readonly>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.observacoes.label(class="form-label") }}
+                            {{ form.observacoes(class="form-control", rows=3) }}
+                            {% if form.observacoes.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.observacoes.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary me-md-2">
+                                <i class="bi bi-arrow-left"></i> Voltar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Salvar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-info-circle"></i> Resumo
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h5 class="alert-heading">
+                            <i class="bi bi-egg-fried"></i> {{ produto.nome }}
+                        </h5>
+                        <hr>
+                        <p class="mb-1">
+                            <strong>Preço de Venda:</strong> R$ {{ "%.2f"|format(produto.preco_venda) }} por caixa
+                        </p>
+                        <p class="mb-1">
+                            <strong>Estoque Atual:</strong> 
+                            <span class="badge bg-{{ 'danger' if produto.estoque_atual <= 0 else 'success' }}">
+                                {{ '%.0f'|format(produto.estoque_atual) }} unidades
+                            </span>
+                        </p>
+                        <p class="mb-1">
+                            <strong>Última Atualização:</strong> 
+                            {{ produto.data_atualizacao.strftime('%d/%m/%Y %H:%M') }}
+                        </p>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h6 class="font-weight-bold">Instruções:</h6>
+                        <ol>
+                            <li>Preencha a quantidade de ovos que entraram no estoque hoje.</li>
+                            <li>O sistema calcula automaticamente o estoque final.</li>
+                            <li>As vendas do dia são registradas automaticamente.</li>
+                            <li>O estoque final de hoje será o estoque inicial de amanhã.</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('estoqueForm');
+        const entrada = document.getElementById('entrada');
+        
+        // Atualiza o estoque final quando a entrada for alterada
+        entrada.addEventListener('input', function() {
+            const estoqueInicial = parseFloat('{{ estoque.estoque_inicial }}');
+            const saida = parseFloat('{{ estoque.saida }}');
+            const novaEntrada = parseFloat(entrada.value) || 0;
+            const estoqueFinal = estoqueInicial + novaEntrada - saida;
+            
+            // Atualiza o campo de estoque final (apenas visual)
+            const estoqueFinalInput = document.querySelector('input[readonly][value*="unidades"]');
+            if (estoqueFinalInput) {
+                estoqueFinalInput.value = Math.round(estoqueFinal) + ' unidades';
+            }
+        });
+    });
+</script>
+{% endblock %}

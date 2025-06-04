@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+
+{% block title %}Vendas{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-receipt"></i> Vendas</h2>
+    <div>
+        <a href="{{ url_for('main.nova_venda') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nova Venda
+        </a>
+        <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#filtroModal">
+            <i class="bi bi-funnel"></i> Filtrar
+        </button>
+    </div>
+</div>
+
+<!-- Modal de Filtro -->
+<div class="modal fade" id="filtroModal" tabindex="-1" aria-labelledby="filtroModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="GET" action="{{ url_for('main.listar_vendas') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="filtroModalLabel">Filtrar Vendas</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="data_inicio" class="form-label">Data Inicial</label>
+                            <input type="date" class="form-control" id="data_inicio" name="data_inicio" 
+                                   value="{{ request.args.get('data_inicio', '') }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="data_fim" class="form-label">Data Final</label>
+                            <input type="date" class="form-control" id="data_fim" name="data_fim"
+                                   value="{{ request.args.get('data_fim', '') }}">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">Todos os status</option>
+                            <option value="rascunho" {% if request.args.get('status') == 'rascunho' %}selected{% endif %}>Rascunho</option>
+                            <option value="pendente" {% if request.args.get('status') == 'pendente' %}selected{% endif %}>Pendente</option>
+                            <option value="finalizada" {% if request.args.get('status') == 'finalizada' %}selected{% endif %}>Finalizada</option>
+                            <option value="cancelada" {% if request.args.get('status') == 'cancelada' %}selected{% endif %}>Cancelada</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="cliente_id" class="form-label">Cliente</label>
+                        <select class="form-select" id="cliente_id" name="cliente_id">
+                            <option value="">Todos os clientes</option>
+                            {% for cliente in clientes %}
+                            <option value="{{ cliente.id }}" 
+                                {% if request.args.get('cliente_id')|int == cliente.id %}selected{% endif %}>
+                                {{ cliente.nome }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a href="{{ url_for('main.listar_vendas') }}" class="btn btn-secondary me-auto">Limpar Filtros</a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Aplicar Filtros</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Tabela de Vendas -->
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Data</th>
+                        <th>Cliente</th>
+                        <th>Itens</th>
+                        <th class="text-end">Valor Total</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-end">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for venda in vendas.items %}
+                    <tr>
+                        <td>#{{ venda.id }}</td>
+                        <td>{{ venda.data_venda.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td>
+                            {% if venda.cliente %}
+                                {{ venda.cliente.nome }}
+                            {% elif venda.nome_cliente %}
+                                {{ venda.nome_cliente }} <small class="text-muted">(Não cadastrado)</small>
+                            {% else %}
+                                Consumidor
+                            {% endif %}
+                        </td>
+                        <td>
+                            <ul class="list-unstyled mb-0">
+                                {% for item in venda.itens %}
+                                <li>
+                                    <small>
+                                        {{ item.quantidade|int if item.quantidade == item.quantidade|int else '%.3f'|format(item.quantidade) }}x 
+                                        {{ item.produto.nome }} ({{ item.produto.codigo }})
+                                    </small>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                        <td class="text-end">R$ {{ '%.2f'|format(venda.valor_total) }}</td>
+                        <td class="text-center">
+                            <span class="badge bg-{{ 'success' if venda.status == 'finalizada' else 'warning' if venda.status == 'pendente' else 'danger' }}">
+                                {{ venda.status|title }}
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group" role="group">
+                                <a href="{{ url_for('main.visualizar_venda', id=venda.id) }}" 
+                                   class="btn btn-sm btn-outline-primary" title="Visualizar">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% if venda.status == 'pendente' %}
+                                <a href="{{ url_for('main.editar_venda', id=venda.id) }}" 
+                                   class="btn btn-sm btn-outline-secondary" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                        onclick="cancelarVenda('{{ venda.id }}')" title="Cancelar">
+                                    <i class="bi bi-x-circle"></i>
+                                </button>
+                                {% endif %}
+                                <button type="button" 
+                                        class="btn btn-sm btn-outline-info" 
+                                        title="Imprimir (Não implementado)"
+                                        disabled>
+                                    <i class="bi bi-printer"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center">Nenhuma venda encontrada.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Paginação -->
+        {% if vendas.pages > 1 %}
+        <nav aria-label="Navegação de páginas" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if vendas.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('main.listar_vendas', page=vendas.prev_num, **request.args) }}" 
+                       aria-label="Anterior">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">&laquo;</span>
+                </li>
+                {% endif %}
+                
+                {% for page_num in vendas.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                    {% if page_num %}
+                        {% if page_num != vendas.page %}
+                        <li class="page-item">
+                            <a class="page-link" 
+                               href="{{ url_for('main.listar_vendas', page=page_num, **request.args) }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item active" aria-current="page">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% endif %}
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if vendas.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('main.listar_vendas', page=vendas.next_num, **request.args) }}" 
+                       aria-label="Próximo">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">&raquo;</span>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal de Resumo -->
+<div class="modal fade" id="resumoModal" tabindex="-1" aria-labelledby="resumoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resumoModalLabel">Resumo da Venda</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="resumoVenda">
+                <!-- Conteúdo dinâmico será inserido aqui -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Função para exibir o resumo da venda em um modal
+function verResumo(vendaId) {
+    fetch(`/vendas/${vendaId}/resumo`)
+        .then(function(response) { 
+            if (!response.ok) {
+                throw new Error('Erro ao carregar o resumo da venda');
+            }
+            return response.text(); 
+        })
+        .then(function(html) {
+            document.getElementById('resumoVenda').innerHTML = html;
+            var resumoModal = new bootstrap.Modal(document.getElementById('resumoModal'));
+            resumoModal.show();
+        })
+        .catch(function(error) {
+            console.error('Erro ao carregar resumo da venda:', error);
+            alert('Não foi possível carregar o resumo da venda.');
+        });
+}
+
+// Função para cancelar uma venda
+function cancelarVenda(vendaId) {
+    if (confirm('Tem certeza que deseja cancelar esta venda? Esta ação não pode ser desfeita.')) {
+        fetch(`/vendas/${vendaId}/cancelar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin'
+        })
+        .then(function(response) { 
+            if (!response.ok) {
+                return response.json().then(err => { throw err; });
+            }
+            return response.json(); 
+        })
+        .then(function(data) {
+            if (data.success) {
+                location.reload();
+            } else {
+                throw new Error(data.message || 'Erro ao cancelar a venda.');
+            }
+        })
+        .catch(function(error) {
+            console.error('Erro ao cancelar venda:', error);
+            alert(error.message || 'Erro ao processar a solicitação.');
+        });
+    }
+}
+</script>
+{% endblock %}

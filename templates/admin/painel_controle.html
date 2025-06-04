@@ -1,0 +1,356 @@
+{% extends "base.html" %}
+
+{% block title %}Painel de Controle - Administrativo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="bi bi-speedometer2"></i> Painel de Controle
+        </h1>
+        <div class="d-none d-sm-inline-block">
+            <span class="text-muted">{{ hoje.strftime('%d/%m/%Y') }}</span>
+        </div>
+    </div>
+
+    <!-- Content Row -->
+    <div class="row">
+        <!-- Total de Usuários -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total de Usuários</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_usuarios }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-people fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total de Clientes -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Total de Clientes</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_clientes }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-person-lines-fill fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total de Produtos -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Total de Produtos</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_produtos }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-box-seam fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vendas do Mês -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Vendas do Mês</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ total_vendas_mes }} (R$ {{ "%.2f"|format(valor_total_mes) }})
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-cart-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Row -->
+    <div class="row">
+        <!-- Gráfico de Vendas -->
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Vendas dos Últimos 7 Dias</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="vendasChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Produtos com Estoque Baixo -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-danger">Produtos com Estoque Baixo</h6>
+                </div>
+                <div class="card-body">
+                    {% if produtos_estoque_baixo %}
+                        <div class="list-group">
+                            {% for produto in produtos_estoque_baixo %}
+                            <a href="{{ url_for('produtos.editar', id=produto.id) }}" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ produto.nome }}</h6>
+                                    <small class="text-danger">{{ produto.estoque_atual|int }} / {{ produto.estoque_minimo|int }}</small>
+                                </div>
+                                <p class="mb-1">
+                                    <span class="badge bg-{{ 'danger' if produto.estoque_atual <= 0 else 'warning' }}">
+                                        {{ 'ESGOTADO' if produto.estoque_atual <= 0 else 'ESTOQUE BAIXO' }}
+                                    </span>
+                                </p>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle"></i> Nenhum produto com estoque baixo.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Row -->
+    <div class="row">
+        <!-- Últimas Vendas -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Últimas Vendas</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Cliente</th>
+                                    <th>Valor</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for venda in ultimas_vendas %}
+                                <tr>
+                                    <td>{{ venda.data_venda.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>{{ venda.cliente.nome if venda.cliente else 'Consumidor' }}</td>
+                                    <td>R$ {{ "%.2f"|format(venda.valor_total) }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if venda.status == 'pago' else 'warning' }}">
+                                            {{ venda.status|title }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center">Nenhuma venda encontrada</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Últimos Clientes -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Últimos Clientes</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Telefone</th>
+                                    <th>Data Cadastro</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cliente in ultimos_clientes %}
+                                <tr>
+                                    <td>{{ cliente.nome }}</td>
+                                    <td>{{ cliente.telefone or 'N/A' }}</td>
+                                    <td>{{ cliente.data_cadastro.strftime('%d/%m/%Y') }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center">Nenhum cliente cadastrado</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Page level plugins -->
+<script src="{{ url_for('static', filename='vendor/chart.js/Chart.min.js') }}"></script>
+
+<!-- Page level custom scripts -->
+<script>
+// Gráfico de Vendas
+var ctx = document.getElementById('vendasChart');
+var myChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: {{ datas|tojson|safe }},
+        datasets: [
+            {
+                label: 'Número de Vendas',
+                data: {{ totais|tojson|safe }},
+                backgroundColor: 'rgba(78, 115, 223, 0.05)',
+                borderColor: 'rgba(78, 115, 223, 1)',
+                pointRadius: 3,
+                pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                pointBorderColor: 'rgba(78, 115, 223, 1)',
+                pointHoverRadius: 3,
+                pointHoverBackgroundColor: 'rgba(78, 115, 223, 1)',
+                pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+                pointHitRadius: 10,
+                pointBorderWidth: 2,
+                borderWidth: 1,
+                tension: 0.3
+            },
+            {
+                label: 'Valor Total (R$)',
+                data: {{ valores|tojson|safe }},
+                type: 'bar',
+                backgroundColor: 'rgba(28, 200, 138, 0.5)',
+                borderColor: 'rgba(28, 200, 138, 1)',
+                borderWidth: 1
+            }
+        ]
+    },
+    options: {
+        maintainAspectRatio: false,
+        layout: {
+            padding: {
+                left: 10,
+                right: 25,
+                top: 25,
+                bottom: 0
+            }
+        },
+        scales: {
+            x: {
+                grid: {
+                    display: false,
+                    drawBorder: false
+                },
+                ticks: {
+                    maxTicksLimit: 7
+                }
+            },
+            y: {
+                ticks: {
+                    maxTicks: 5,
+                    padding: 10,
+                    callback: function(value, index, values) {
+                        return 'R$ ' + value.toFixed(2).replace(/\./g, ',').replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                    }
+                },
+                grid: {
+                    color: 'rgb(234, 236, 244)',
+                    zeroLineColor: 'rgb(234, 236, 244)',
+                    drawBorder: false,
+                    borderDash: [2],
+                    zeroLineBorderDash: [2],
+                    drawOnChartArea: true
+                }
+            },
+            y1: {
+                position: 'right',
+                grid: {
+                    display: false,
+                    drawOnChartArea: false,
+                    drawBorder: false,
+                },
+                ticks: {
+                    maxTicks: 5,
+                    padding: 10,
+                    callback: function(value, index, values) {
+                        return value;
+                    }
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: true,
+                position: 'top',
+            },
+            tooltip: {
+                backgroundColor: "rgb(255,255,255)",
+                bodyColor: "#858796",
+                titleMarginBottom: 10,
+                titleColor: "#6e707e",
+                titleFontSize: 14,
+                borderColor: '#dddfeb',
+                borderWidth: 1,
+                xPadding: 15,
+                yPadding: 15,
+                displayColors: false,
+                intersect: false,
+                mode: 'index',
+                caretPadding: 10,
+                callbacks: {
+                    label: function(context) {
+                        var label = context.dataset.label || '';
+                        if (label) {
+                            label += ': ';
+                        }
+                        if (context.parsed.y !== null) {
+                            if (context.datasetIndex === 0) {
+                                label += context.parsed.y + ' venda(s)';
+                            } else {
+                                label += 'R$ ' + context.parsed.y.toFixed(2).replace(/\./g, ',').replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                            }
+                        }
+                        return label;
+                    }
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

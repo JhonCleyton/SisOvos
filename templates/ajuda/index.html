@@ -1,0 +1,101 @@
+{% extends 'ajuda/base.html' %}
+
+{% block ajuda_content %}
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h5 class="m-0 font-weight-bold text-primary">Bem-vindo à Central de Ajuda</h5>
+    </div>
+    <div class="card-body">
+        <div class="text-center">
+            <img class="img-fluid px-3 px-sm-4 mt-3 mb-4" style="width: 25rem;" 
+                 src="{{ url_for('static', filename='img/undraw_help.svg') }}" alt="Ajuda">
+        </div>
+        
+        <h4>Como podemos ajudar você hoje?</h4>
+        <p>Estamos aqui para ajudar você a aproveitar ao máximo o sistema. Escolha uma das opções abaixo:</p>
+        
+        <div class="row mt-4">
+            <div class="col-md-6 mb-4">
+                <div class="card border-left-primary h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="mr-3">
+                                <i class="bi bi-envelope fa-2x text-primary"></i>
+                            </div>
+                            <div>
+                                <h5 class="card-title">Entre em Contato</h5>
+                                <p class="card-text">Envie-nos uma mensagem diretamente pelo nosso formulário de contato.</p>
+                                <a href="{{ url_for('main.contato') }}" class="btn btn-primary btn-sm">
+                                    Ir para Contato
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <div class="card border-left-success h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="mr-3">
+                                <i class="bi bi-question-circle fa-2x text-success"></i>
+                            </div>
+                            <div>
+                                <h5 class="card-title">Perguntas Frequentes</h5>
+                                <p class="card-text">Encontre respostas para as dúvidas mais comuns sobre o sistema.</p>
+                                <a href="#" class="btn btn-success btn-sm">
+                                    Ver Perguntas
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <div class="card border-left-info h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="mr-3">
+                                <i class="bi bi-book fa-2x text-info"></i>
+                            </div>
+                            <div>
+                                <h5 class="card-title">Documentação</h5>
+                                <p class="card-text">Acesse a documentação completa do sistema.</p>
+                                <a href="#" class="btn btn-info btn-sm">
+                                    Acessar Documentação
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <div class="card border-left-warning h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="mr-3">
+                                <i class="bi bi-youtube fa-2x text-warning"></i>
+                            </div>
+                            <div>
+                                <h5 class="card-title">Tutoriais em Vídeo</h5>
+                                <p class="card-text">Assista a vídeos explicativos sobre como usar o sistema.</p>
+                                <a href="#" class="btn btn-warning btn-sm">
+                                    Ver Tutoriais
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="alert alert-info mt-4">
+            <h5><i class="bi bi-info-circle"></i> Precisa de ajuda urgente?</h5>
+            <p class="mb-0">Entre em contato pelo telefone: <strong>(73) 2011-8430</strong> ou envie um e-mail para <strong>ti@frangoqdelicia.com.br</strong></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

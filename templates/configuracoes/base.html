@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Configurações{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse
+            {% if not request.cookies.get('sidebar-state') or request.cookies.get('sidebar-state') == 'expanded' %} show{% endif %}" 
+            id="sidebarMenu">
+            <div class="position-sticky pt-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link{% if active_page == 'sistema' %} active{% endif %}" 
+                           href="{{ url_for('configuracoes.sistema') }}">
+                            <i class="fas fa-cog me-2"></i>
+                            Sistema
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link{% if active_page == 'seguranca' %} active{% endif %}" 
+                           href="{{ url_for('configuracoes.seguranca') }}">
+                            <i class="fas fa-shield-alt me-2"></i>
+                            Segurança
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link{% if active_page == 'backup' %} active{% endif %}" 
+                           href="{{ url_for('configuracoes.backup') }}">
+                            <i class="fas fa-database me-2"></i>
+                            Backup
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">
+                    <i class="fas fa-cog me-2"></i>
+                    Configurações
+                </h1>
+            </div>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            
+            {% block config_content %}
+            {% endblock %}
+        </main>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+// Atualiza o estado ativo do menu
+$(document).ready(function() {
+    // Adiciona classe 'active' ao item do menu atual
+    const currentPath = window.location.pathname;
+    $('.nav-link').each(function() {
+        const linkPath = $(this).attr('href');
+        if (currentPath === linkPath) {
+            $(this).addClass('active');
+        }
+    });
+});
+</script>
+{% endblock %}

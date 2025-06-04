@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block title %}Financeiro - Controle de Recebimentos{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-cash-coin"></i> Controle de Recebimentos</h2>
+    <div>
+        <a href="{{ url_for('relatorios.relatorio_financeiro') }}" class="btn btn-info text-white me-2">
+            <i class="bi bi-graph-up"></i> Relatório Financeiro
+        </a>
+        <a href="{{ url_for('main.listar_vendas') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Voltar para Vendas
+        </a>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label for="status" class="form-label">Status</label>
+                <select name="status" id="status" class="form-select">
+                    <option value="pendentes" {% if status == 'pendentes' %}selected{% endif %}>Pendentes</option>
+                    <option value="pagos" {% if status == 'pagos' %}selected{% endif %}>Pagos</option>
+                    <option value="canceladas" {% if status == 'canceladas' %}selected{% endif %}>Canceladas</option>
+                    <option value="todos" {% if status == 'todos' %}selected{% endif %}>Todos</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="data_inicio" class="form-label">Data Início</label>
+                <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ data_inicio or '' }}">
+            </div>
+            <div class="col-md-3">
+                <label for="data_fim" class="form-label">Data Fim</label>
+                <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ data_fim or '' }}">
+            </div>
+            <div class="col-md-3">
+                <label for="cliente_id" class="form-label">Cliente</label>
+                <select name="cliente_id" id="cliente_id" class="form-select">
+                    <option value="">Todos os Clientes</option>
+                    {% for cliente in clientes %}
+                    <option value="{{ cliente.id }}" {% if cliente_id == cliente.id %}selected{% endif %}>
+                        {{ cliente.nome }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-funnel"></i> Filtrar
+                </button>
+                <a href="{{ url_for('main.financeiro') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-lg"></i> Limpar Filtros
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Resumo Financeiro -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h5 class="card-title">Total Pendente</h5>
+                <h4 class="text-warning">R$ {{ "%.2f"|format(total_pendente) }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h5 class="card-title">Total Recebido</h5>
+                <h4 class="text-success">R$ {{ "%.2f"|format(total_recebido) }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h5 class="card-title">Total Cancelado</h5>
+                <h4 class="text-danger">R$ {{ "%.2f"|format(total_cancelado) }}</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Vendas -->
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Data Venda</th>
+                        <th>Cliente</th>
+                        <th class="text-end">Valor Total</th>
+                        <th>Status</th>
+                        <th>Pagamento</th>
+                        <th class="text-end">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for venda in vendas %}
+                    <tr class="{% if venda.status == 'pago' %}table-success{% elif venda.status == 'cancelada' %}table-danger{% endif %}">
+                        <td>{{ venda.id }}</td>
+                        <td>{{ venda.data_venda.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td>{{ venda.cliente.nome if venda.cliente else 'Cliente não informado' }}</td>
+                        <td class="text-end">R$ {{ "%.2f"|format(venda.valor_total) }}</td>
+                        <td>
+                            {% if venda.status == 'pago' %}
+                                <span class="badge bg-success">Pago</span>
+                            {% elif venda.status == 'cancelada' %}
+                                <span class="badge bg-danger">Cancelada</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">Pendente</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if venda.status == 'pago' %}
+                                <span class="text-success">{{ venda.data_pagamento.strftime('%d/%m/%Y %H:%M') if venda.data_pagamento else 'Pago' }}</span>
+                            {% elif venda.status == 'cancelada' %}
+                                <span class="text-muted">-</span>
+                            {% else %}
+                                <span class="text-warning">Aguardando</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group" role="group">
+                                <a href="{{ url_for('main.visualizar_venda', id=venda.id) }}" 
+                                   class="btn btn-sm btn-outline-primary" 
+                                   title="Visualizar">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% if venda.status == 'pendente' %}
+                                <button type="button" 
+                                        class="btn btn-sm btn-outline-success confirmar-pagamento" 
+                                        data-venda-id="{{ venda.id }}"
+                                        title="Confirmar Pagamento">
+                                    <i class="bi bi-check-lg"></i>
+                                </button>
+                                <button type="button" 
+                                        class="btn btn-sm btn-outline-danger cancelar-venda" 
+                                        data-venda-id="{{ venda.id }}"
+                                        title="Cancelar Venda">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center">Nenhuma venda encontrada com os filtros selecionados.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Pagamento -->
+<div class="modal fade" id="confirmarPagamentoModal" tabindex="-1" aria-labelledby="confirmarPagamentoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmarPagamentoModalLabel">Confirmar Pagamento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p>Deseja realmente confirmar o recebimento deste pagamento?</p>
+                <p><strong>Venda #<span id="venda-numero"></span></strong></p>
+                <p>Cliente: <span id="venda-cliente"></span></p>
+                <p>Valor: R$ <span id="venda-valor"></span></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="form-confirmar-pagamento" method="post" action="">
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-lg"></i> Confirmar Pagamento
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Cancelamento de Venda -->
+<div class="modal fade" id="cancelarVendaModal" tabindex="-1" aria-labelledby="cancelarVendaModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="cancelarVendaModalLabel">Cancelar Venda</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja cancelar esta venda?</p>
+                <p><strong>Venda #<span id="venda-cancelar-numero"></span></strong></p>
+                <p>Cliente: <span id="venda-cancelar-cliente"></span></p>
+                <p>Valor: R$ <span id="venda-cancelar-valor"></span></p>
+                <div class="alert alert-warning mt-3">
+                    <i class="bi bi-exclamation-triangle-fill"></i> 
+                    Atenção: Esta ação não pode ser desfeita. 
+                    {% if venda and venda.itens %}
+                    Os itens serão devolvidos ao estoque.
+                    {% endif %}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Manter Venda</button>
+                <form id="form-cancelar-venda" method="post" action="">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-x-lg"></i> Confirmar Cancelamento
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(document).ready(function() {
+    // Configura o modal de confirmação de pagamento
+    $('.confirmar-pagamento').on('click', function() {
+        const vendaId = $(this).data('venda-id');
+        const vendaRow = $(this).closest('tr');
+        const vendaNumero = vendaRow.find('td:first').text();
+        const vendaCliente = vendaRow.find('td:nth-child(3)').text();
+        const vendaValor = vendaRow.find('td:nth-child(4)').text();
+        
+        $('#venda-numero').text(vendaNumero);
+        $('#venda-cliente').text(vendaCliente);
+        $('#venda-valor').text(vendaValor);
+        
+        const url = '{{ url_for("main.confirmar_pagamento", id=0) }}'.replace('0', vendaId);
+        $('#form-confirmar-pagamento').attr('action', url);
+        
+        const modal = new bootstrap.Modal(document.getElementById('confirmarPagamentoModal'));
+        modal.show();
+    });
+    
+    // Configura o modal de cancelamento de venda
+    $('.cancelar-venda').on('click', function() {
+        const vendaId = $(this).data('venda-id');
+        const vendaRow = $(this).closest('tr');
+        const vendaNumero = vendaRow.find('td:first').text();
+        const vendaCliente = vendaRow.find('td:nth-child(3)').text();
+        const vendaValor = vendaRow.find('td:nth-child(4)').text();
+        
+        $('#venda-cancelar-numero').text(vendaNumero);
+        $('#venda-cancelar-cliente').text(vendaCliente);
+        $('#venda-cancelar-valor').text(vendaValor);
+        
+        const url = '{{ url_for("main.cancelar_venda", id=0) }}'.replace('0', vendaId);
+        $('#form-cancelar-venda').attr('action', url);
+        
+        const modal = new bootstrap.Modal(document.getElementById('cancelarVendaModal'));
+        modal.show();
+    });
+    
+    // Configura o formulário de filtro para manter os parâmetros na URL
+    $('form[method="get"]').on('submit', function(e) {
+        e.preventDefault();
+        const form = $(this);
+        const params = form.serialize();
+        window.location.href = '{{ url_for("main.financeiro") }}?' + params;
+    });
+});
+</script>
+{% endblock %}

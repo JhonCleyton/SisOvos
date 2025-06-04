@@ -1,0 +1,275 @@
+{% extends "configuracoes/base.html" %}
+
+{% block title %}Configurações de Backup{% endblock %}
+
+{% block config_content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-database me-2"></i>
+                    Backup do Banco de Dados
+                </h5>
+                <a href="{{ url_for('configuracoes.gerar_backup') }}" class="btn btn-primary">
+                    <i class="fas fa-download me-2"></i>Gerar Backup Agora
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Arquivo</th>
+                                <th>Tamanho</th>
+                                <th>Data de Criação</th>
+                                <th class="text-end">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for backup in backups %}
+                            <tr>
+                                <td>
+                                    <i class="fas fa-file-archive text-primary me-2"></i>
+                                    {{ backup.nome }}
+                                </td>
+                                <td>{{ backup.tamanho }}</td>
+                                <td>{{ backup.data_criacao|datetimeformat('%d/%m/%Y %H:%M') }}</td>
+                                <td class="text-end">
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('configuracoes.baixar_backup', nome_arquivo=backup.nome) }}" 
+                                           class="btn btn-sm btn-outline-primary" 
+                                           title="Baixar">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-danger" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#excluirBackupModal"
+                                                data-backup-nome="{{ backup.nome }}"
+                                                title="Excluir">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">
+                                    <i class="fas fa-inbox fa-2x d-block mb-2"></i>
+                                    Nenhum backup encontrado
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div class="text-muted">
+                        Mostrando {{ backups|length }} de {{ total_backups }} backups
+                    </div>
+                    <nav aria-label="Navegação de páginas">
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Anterior</a>
+                            </li>
+                            <li class="page-item active" aria-current="page">
+                                <a class="page-link" href="#">1</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="#">2</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="#">Próximo</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-cog me-2"></i>
+                    Configurações de Backup Automático
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('configuracoes.backup') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            {{ form.backup_automatico(class="form-check-input") }}
+                            {{ form.backup_automatico.label(class="form-check-label") }}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.frequencia_backup.label(class="form-label") }}
+                        {{ form.frequencia_backup(class="form-select") }}
+                        {% if form.frequencia_backup.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.frequencia_backup.errors[0] }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.hora_backup.label(class="form-label") }}
+                        {{ form.hora_backup(class="form-control") }}
+                        <small class="form-text text-muted">Horário em que o backup será realizado.</small>
+                        {% if form.hora_backup.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.hora_backup.errors[0] }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.manter_backups.label(class="form-label") }}
+                        <div class="input-group">
+                            {{ form.manter_backups(class="form-control") }}
+                            <span class="input-group-text">backups</span>
+                        </div>
+                        <small class="form-text text-muted">Número de backups a serem mantidos antes de excluir os mais antigos.</small>
+                        {% if form.manter_backups.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.manter_backups.errors[0] }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Salvar Configurações
+                        </button>
+                    </div>
+                </form>
+                
+                <hr class="my-4">
+                
+                <h6 class="mb-3">Restaurar Backup</h6>
+                <form method="POST" action="{{ url_for('configuracoes.restaurar_backup') }}" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="arquivo_backup" class="form-label">Selecione o arquivo de backup (.sqlite)</label>
+                        <input class="form-control" type="file" id="arquivo_backup" name="arquivo_backup" accept=".sqlite,.db,.sqlite3">
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-upload me-2"></i>Restaurar Backup
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card shadow-sm border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Área de Risco
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">
+                    <small>
+                        A restauração de backup substituirá todos os dados atuais. 
+                        Certifique-se de fazer um backup antes de continuar.
+                    </small>
+                </p>
+                <button type="button" class="btn btn-outline-danger w-100" data-bs-toggle="modal" data-bs-target="#restaurarBackupModal">
+                    <i class="fas fa-history me-2"></i>Restaurar para Fábrica
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Excluir Backup -->
+<div class="modal fade" id="excluirBackupModal" tabindex="-1" aria-labelledby="excluirBackupModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="excluirBackupModalLabel">Confirmar Exclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir o backup <strong id="nomeBackupExcluir"></strong>?</p>
+                <p class="text-danger">Esta ação não pode ser desfeita.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <a href="#" id="btnConfirmarExcluir" class="btn btn-danger">Excluir</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Restaurar Fábrica -->
+<div class="modal fade" id="restaurarBackupModal" tabindex="-1" aria-labelledby="restaurarBackupModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="restaurarBackupModalLabel">Restaurar para Configurações de Fábrica</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <h6 class="alert-heading">Atenção!</h6>
+                    <p class="mb-0">
+                        Esta ação irá redefinir todo o sistema para as configurações de fábrica. 
+                        <strong>Todos os dados serão perdidos</strong> e não poderão ser recuperados.
+                    </p>
+                </div>
+                <p>Digite <strong>CONFIRMAR</strong> no campo abaixo para prosseguir:</p>
+                <input type="text" id="confirmacaoRestauracao" class="form-control mb-3" placeholder="Digite CONFIRMAR">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="btnConfirmarRestauracao" class="btn btn-danger" disabled>
+                    <i class="fas fa-exclamation-triangle me-2"></i>Restaurar Fábrica
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+// Atualiza o link de exclusão no modal
+$('#excluirBackupModal').on('show.bs.modal', function (event) {
+    var button = $(event.relatedTarget);
+    var nomeBackup = button.data('backup-nome');
+    var modal = $(this);
+    
+    modal.find('#nomeBackupExcluir').text(nomeBackup);
+    modal.find('#btnConfirmarExcluir').attr('href', '/configuracoes/backup/' + nomeBackup + '/excluir');
+});
+
+// Habilita/desabilita o botão de confirmação de restauração
+$('#confirmacaoRestauracao').on('input', function() {
+    var texto = $(this).val().toUpperCase();
+    $('#btnConfirmarRestauracao').prop('disabled', texto !== 'CONFIRMAR');
+});
+
+// Ação do botão de confirmação de restauração
+$('#btnConfirmarRestauracao').on('click', function() {
+    // Aqui você pode adicionar o código para restaurar para as configurações de fábrica
+    // Por exemplo, fazer uma requisição AJAX para o endpoint apropriado
+    alert('Funcionalidade de restauração para fábrica será implementada aqui.');
+    $('#restaurarBackupModal').modal('hide');
+});
+
+// Inicializa os tooltips
+$(function () {
+    $('[data-bs-toggle="tooltip"]').tooltip()
+});
+</script>
+{% endblock %}

@@ -1,0 +1,86 @@
+<!-- Modal Adicionar Item -->
+<div class="modal fade" id="adicionarItemModal" tabindex="-1" aria-labelledby="adicionarItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="adicionarItemModalLabel">
+                    <i class="bi bi-cart-plus"></i> Adicionar Item à Venda
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form id="formAdicionarItem" action="{{ url_for('main.adicionar_item_venda', venda_id=venda.id) }}" method="POST">
+                <div class="modal-body">
+                    {{ form.hidden_tag() }}
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="produto_id" class="form-label">Produto *</label>
+                                <select class="form-select" id="produto_id" name="produto_id" required>
+                                    <option value="">Selecione um produto</option>
+                                    {% for produto in produtos_disponiveis %}
+                                    <option value="{{ produto.id }}" 
+                                            data-estoque="{{ produto.estoque_atual }}" 
+                                            data-unidade="{{ produto.unidade_medida }}"
+                                            data-preco="{{ produto.preco_venda }}">
+                                        {{ produto.nome }} - Estoque: {{ produto.estoque_atual }} {{ produto.unidade_medida }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Apenas produtos com estoque disponível são exibidos</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="quantidade" class="form-label">Quantidade *</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="quantidade" name="quantidade" 
+                                           step="0.001" min="0.001" required>
+                                    <span class="input-group-text" id="unidade_medida">---</span>
+                                </div>
+                                <div class="form-text">Estoque disponível: <span id="estoque_disponivel">0</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="preco_unitario" class="form-label">Preço Unitário *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    <input type="number" class="form-control" id="preco_unitario" name="preco_unitario" 
+                                           step="0.01" min="0.01" required>
+                                </div>
+                                <div class="form-text">Preço sugerido: R$ <span id="preco_sugerido">0,00</span></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="desconto" class="form-label">Desconto</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="desconto" name="desconto" 
+                                           step="0.1" min="0" max="100" value="0">
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                <div class="form-text">Valor com desconto: R$ <span id="valor_com_desconto">0,00</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="observacoes" class="form-label">Observações</label>
+                        <textarea class="form-control" id="observacoes" name="observacoes" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="btnAdicionarItem">
+                        <i class="bi bi-plus-lg"></i> Adicionar Item
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

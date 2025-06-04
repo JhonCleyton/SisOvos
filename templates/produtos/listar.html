@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+
+{% block title %}Produtos{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-box-seam"></i> Produtos</h2>
+    <div>
+        <a href="{{ url_for('main.novo_produto') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Novo Produto
+        </a>
+        <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#filtroModal">
+            <i class="bi bi-funnel"></i> Filtrar
+        </button>
+    </div>
+</div>
+
+<!-- Modal de Filtro -->
+<div class="modal fade" id="filtroModal" tabindex="-1" aria-labelledby="filtroModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="GET" action="{{ url_for('main.listar_produtos') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="filtroModalLabel">Filtrar Produtos</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="busca" class="form-label">Buscar</label>
+                        <input type="text" class="form-control" id="busca" name="busca" value="{{ request.args.get('busca', '') }}" placeholder="Nome ou código do produto">
+                    </div>
+                    <div class="mb-3">
+                        <label for="categoria" class="form-label">Categoria</label>
+                        <select class="form-select" id="categoria" name="categoria">
+                            <option value="">Todas as categorias</option>
+                            {% for categoria in categorias %}
+                            <option value="{{ categoria }}" {% if request.args.get('categoria') == categoria %}selected{% endif %}>{{ categoria }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="estoque_baixo" name="estoque_baixo" value="1" {% if request.args.get('estoque_baixo') == '1' %}checked{% endif %}>
+                        <label class="form-check-label" for="estoque_baixo">Apenas com estoque baixo</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a href="{{ url_for('main.listar_produtos') }}" class="btn btn-secondary me-auto">Limpar</a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Aplicar Filtros</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Nome</th>
+                        <th>Categoria</th>
+                        <th class="text-end">Preço</th>
+                        <th class="text-center">Estoque</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-end">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for produto in produtos %}
+                    <tr>
+                        <td>{{ produto.codigo_barras or '-' }}</td>
+                        <td>{{ produto.nome }}</td>
+                        <td>{{ produto.categoria or '-' }}</td>
+                        <td class="text-end">R$ {{ "%.2f"|format(produto.preco_venda) }}</td>
+                        <td class="text-center">
+                            <span class="badge bg-{{ 'danger' if produto.estoque_atual <= produto.estoque_minimo else 'success' }}">
+                                {{ produto.estoque_atual }} {{ produto.unidade_medida }}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-{{ 'success' if produto.ativo else 'secondary' }}">
+                                {{ 'Ativo' if produto.ativo else 'Inativo' }}
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group" role="group" aria-label="Ações do produto">
+                                {% if has_permission(current_user, 'main.visualizar_produto') %}
+                                <a href="{{ url_for('main.visualizar_produto', id=produto.id) }}" class="btn btn-sm btn-outline-info" title="Visualizar">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% endif %}
+                                
+                                {% if has_permission(current_user, 'main.editar_produto') %}
+                                <a href="{{ url_for('main.editar_produto', id=produto.id) }}" class="btn btn-sm btn-outline-primary" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                {% endif %}
+                                
+                                {% if has_permission(current_user, 'main.alterar_status_produto') %}
+                                <button type="button"
+                                        class="btn btn-sm {% if produto.ativo %}btn-outline-warning{% else %}btn-outline-success{% endif %} btn-mudar-status"
+                                        data-produto-id="{{ produto.id }}"
+                                        data-ativo="{{ 'false' if produto.ativo else 'true' }}"
+                                        title="{% if produto.ativo %}Desativar{% else %}Ativar{% endif %}">
+                                    <i class="bi bi-{% if produto.ativo %}x-circle{% else %}check-circle{% endif %}"></i>
+                                </button>
+                                {% endif %}
+                                
+                                {% if has_permission(current_user, 'main.excluir_produto') %}
+                                <form action="{{ url_for('main.excluir_produto', id=produto.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Tem certeza que deseja desativar este produto? Ele não estará mais disponível para venda.');">
+                                    <input type="hidden" name="_method" value="DELETE">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Desativar">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center">Nenhum produto encontrado.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Paginação -->
+        {% if produtos.pages > 1 %}
+        <nav aria-label="Navegação de páginas" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if produtos.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('main.listar_produtos', page=produtos.prev_num, **request.args) }}" aria-label="Anterior">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">&laquo;</span>
+                </li>
+                {% endif %}
+                
+                {% for page_num in produtos.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                    {% if page_num %}
+                        {% if page_num != produtos.page %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('main.listar_produtos', page=page_num, **request.args) }}">{{ page_num }}</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item active" aria-current="page">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% endif %}
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if produtos.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('main.listar_produtos', page=produtos.next_num, **request.args) }}" aria-label="Próximo">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">&raquo;</span>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Configuração do CSRF Token para requisições AJAX
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    
+    // Função para formatar mensagens de feedback
+    function showAlert(message, type = 'success') {
+        const alertHtml = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+            </div>
+        `;
+        
+        // Adiciona o alerta no topo da página
+        const alertContainer = document.getElementById('alert-container');
+        if (alertContainer) {
+            alertContainer.insertAdjacentHTML('afterbegin', alertHtml);
+            
+            // Remove o alerta após 5 segundos
+            setTimeout(() => {
+                const alert = document.querySelector('.alert');
+                if (alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }
+            }, 5000);
+        }
+    }
+    
+    // Função para atualizar o status do produto via AJAX
+    function updateProductStatus(productId, isActive) {
+        const url = `{{ url_for('main.alterar_status_produto', id=0) }}`.replace('0', productId);
+        
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ ativo: isActive })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Atualiza a página para refletir as mudanças
+                window.location.reload();
+            } else {
+                showAlert(data.message || 'Erro ao atualizar o status do produto.', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            showAlert('Erro ao se comunicar com o servidor. Tente novamente.', 'danger');
+        });
+    }
+    
+    // Adiciona o evento de clique para os botões de alterar status
+    document.addEventListener('DOMContentLoaded', function() {
+        // Configura os tooltips do Bootstrap
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Configura os botões de alterar status
+        const statusButtons = document.querySelectorAll('.btn-mudar-status');
+        statusButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const productId = this.getAttribute('data-produto-id');
+                const isActive = this.getAttribute('data-ativo') === 'true';
+                
+                if (confirm(`Tem certeza que deseja ${isActive ? 'ativar' : 'desativar'} este produto?`)) {
+                    updateProductStatus(productId, isActive);
+                }
+            });
+        });
+        
+        // Configura os formulários de exclusão
+        const deleteForms = document.querySelectorAll('form[action*="/excluir/"]');
+        deleteForms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                if (!confirm('Tem certeza que deseja desativar este produto? Ele não estará mais disponível para venda.')) {
+                    e.preventDefault();
+                }
+            });
+        });
+    });
+document.addEventListener('DOMContentLoaded', function() {
+    // Adiciona um ouvinte de evento de clique a todos os botões de mudança de status
+    document.querySelectorAll('.btn-mudar-status').forEach(function(button) {
+        button.addEventListener('click', function() {
+            const produtoId = this.getAttribute('data-produto-id');
+            const ativo = this.getAttribute('data-ativo') === 'true';
+            const acao = ativo ? 'ativar' : 'desativar';
+            
+            if (confirm('Tem certeza que deseja ' + acao + ' este produto?')) {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                const url = '/relatorios/produtos/' + produtoId + '/status';
+                const options = {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ ativo: ativo })
+                };
+                
+                fetch(url, options)
+                    .then(function(response) {
+                        return response.json();
+                    })
+                    .then(function(data) {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            throw new Error(data.message || 'Erro desconhecido');
+                        }
+                    })
+                    .catch(function(error) {
+                        console.error('Error:', error);
+                        alert('Ocorreu um erro ao atualizar o status do produto: ' + error.message);
+                    });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

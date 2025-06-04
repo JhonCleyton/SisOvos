@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Gestão de Usuários{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>{% block page_title %}{% endblock %}</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Início</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('main.listar_usuarios') }}">Usuários</a></li>
+                    {% block breadcrumb %}{% endblock %}
+                </ol>
+            </nav>
+        </div>
+        {% block page_actions %}{% endblock %}
+    </div>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    {% block usuarios_content %}{% endblock %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+// Scripts específicos para usuários
+$(document).ready(function() {
+    // Confirmação antes de excluir
+    $('.btn-excluir').on('click', function(e) {
+        if (!confirm('Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.')) {
+            e.preventDefault();
+        }
+    });
+    
+    // Máscaras
+    $('.telefone').mask('(00) 00000-0000');
+    $('.cpf').mask('000.000.000-00');
+    $('.cep').mask('00000-000');
+});
+</script>
+{% endblock %}

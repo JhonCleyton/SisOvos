@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+
+{% block title %}Nova Venda - SisOvos{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Nova Venda</h1>
+        <a href="{{ url_for('main.listar_vendas') }}" class="btn btn-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Voltar para Vendas
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Dados da Venda</h6>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('main.nova_venda') }}">
+                {{ form.hidden_tag() }}
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.cliente_id.label(class="form-label") }}
+                            {{ form.cliente_id(class="form-select" + (' is-invalid' if form.cliente_id.errors else '')) }}
+                            <div class="form-text">Deixe em branco para cliente não cadastrado</div>
+                            {% if form.cliente_id.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.cliente_id.errors[0] }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.nome_cliente.label(class="form-label") }}
+                            {{ form.nome_cliente(class="form-control" + (' is-invalid' if form.nome_cliente.errors else '')) }}
+                            <div class="form-text">Preencha apenas se não selecionar um cliente cadastrado</div>
+                            {% if form.nome_cliente.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.nome_cliente.errors[0] }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.forma_pagamento.label(class="form-label") }}
+                            {{ form.forma_pagamento(class="form-control" + (' is-invalid' if form.forma_pagamento.errors else '')) }}
+                            {% if form.forma_pagamento.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.forma_pagamento.errors[0] }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            {{ form.data_venda.label(class="form-label") }}
+                            {{ form.data_venda(class="form-control" + (' is-invalid' if form.data_venda.errors else ''), type="datetime-local") }}
+                            {% if form.data_venda.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.data_venda.errors[0] }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            {{ form.desconto.label(class="form-label") }}
+                            <div class="input-group">
+                                <span class="input-group-text">R$</span>
+                                <input type="number" 
+                                       class="form-control{{ ' is-invalid' if form.desconto.errors else '' }}" 
+                                       id="{{ form.desconto.id }}" 
+                                       name="{{ form.desconto.name }}" 
+                                       value="{{ '%.2f'|format(form.desconto.data) if form.desconto.data is not none else '0.00' }}" 
+                                       step="0.01" 
+                                       min="0">
+                            </div>
+                            {% if form.desconto.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.desconto.errors[0] }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            {{ form.numero_cupom.label(class="form-label") }}
+                            {{ form.numero_cupom(class="form-control" + (' is-invalid' if form.numero_cupom.errors else ''), placeholder="Opcional") }}
+                            {% if form.numero_cupom.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.numero_cupom.errors[0] }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group mb-3">
+                    {{ form.observacoes.label(class="form-label") }}
+                    {{ form.observacoes(class="form-control" + (' is-invalid' if form.observacoes.errors else ''), rows=3) }}
+                    {% if form.observacoes.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.observacoes.errors[0] }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{{ url_for('main.listar_vendas') }}" class="btn btn-secondary me-md-2">
+                        <i class="bi bi-x-lg"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Salvar Venda
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Função para atualizar o estado dos campos de cliente
+    function atualizarCamposCliente() {
+        const clienteSelect = document.getElementById('{{ form.cliente_id.id }}');
+        const nomeClienteInput = document.getElementById('{{ form.nome_cliente.id }}');
+        
+        if (clienteSelect && nomeClienteInput) {
+            // Se um cliente for selecionado, desabilita o campo de nome
+            if (clienteSelect.value) {
+                nomeClienteInput.disabled = true;
+                nomeClienteInput.value = '';
+            } else {
+                nomeClienteInput.disabled = false;
+            }
+            
+            // Se houver texto no campo de nome, desabilita o select
+            if (nomeClienteInput.value.trim() !== '') {
+                clienteSelect.disabled = true;
+            } else {
+                clienteSelect.disabled = false;
+            }
+        }
+    }
+    
+    // Formatação do campo de desconto e lógica dos campos de cliente
+    document.addEventListener('DOMContentLoaded', function() {
+        // Configuração dos campos de cliente
+        const clienteSelect = document.getElementById('{{ form.cliente_id.id }}');
+        const nomeClienteInput = document.getElementById('{{ form.nome_cliente.id }}');
+        
+        if (clienteSelect && nomeClienteInput) {
+            // Configura os eventos
+            clienteSelect.addEventListener('change', atualizarCamposCliente);
+            nomeClienteInput.addEventListener('input', function() {
+                if (this.value.trim() !== '') {
+                    clienteSelect.value = '';
+                    clienteSelect.disabled = true;
+                } else {
+                    clienteSelect.disabled = false;
+                }
+            });
+            
+            // Inicializa o estado dos campos
+            atualizarCamposCliente();
+        }
+        
+        // Configura o campo de desconto para aceitar apenas números e ponto decimal
+        const descontoInput = document.getElementById('{{ form.desconto.id }}');
+        if (descontoInput) {
+            // Garante que o valor seja um número com duas casas decimais
+            descontoInput.addEventListener('blur', function() {
+                if (this.value) {
+                    // Remove qualquer caractere que não seja número ou ponto
+                    let value = this.value.replace(/[^0-9.]/g, '');
+                    // Garante que haja no máximo um ponto decimal
+                    const parts = value.split('.');
+                    if (parts.length > 2) {
+                        value = parts[0] + '.' + parts.slice(1).join('');
+                    }
+                    // Formata para duas casas decimais
+                    const numValue = parseFloat(value || 0);
+                    this.value = numValue.toFixed(2);
+                }
+            });
+            
+            // Permite apenas números e um único ponto decimal
+            descontoInput.addEventListener('keypress', function(e) {
+                const charCode = (e.which) ? e.which : e.keyCode;
+                const value = this.value;
+                
+                // Permite apenas um ponto decimal
+                if (charCode === 46 && value.includes('.')) {
+                    e.preventDefault();
+                    return false;
+                }
+                
+                // Permite apenas números e ponto
+                if (charCode !== 46 && charCode > 31 && (charCode < 48 || charCode > 57)) {
+                    e.preventDefault();
+                    return false;
+                }              
+            return true;
+            });
+        }
+    });
+</script>
+{% endblock %}

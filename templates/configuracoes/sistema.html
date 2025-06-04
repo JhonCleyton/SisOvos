@@ -1,0 +1,101 @@
+{% extends "configuracoes/base.html" %}
+
+{% block title %}Configurações do Sistema{% endblock %}
+
+{% block config_content %}
+<div class="card shadow-sm mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-cog me-2"></i>
+            Configurações do Sistema
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('configuracoes.sistema') }}">
+            {{ form.hidden_tag() }}
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        {{ form.nome_empresa.label(class="form-label") }}
+                        {{ form.nome_empresa(class="form-control") }}
+                        {% if form.nome_empresa.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.nome_empresa.errors[0] }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        {{ form.email_contato.label(class="form-label") }}
+                        {{ form.email_contato(class="form-control") }}
+                        {% if form.email_contato.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.email_contato.errors[0] }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        {{ form.itens_por_pagina.label(class="form-label") }}
+                        {{ form.itens_por_pagina(class="form-select") }}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        {{ form.horario_abertura.label(class="form-label") }}
+                        {{ form.horario_abertura(class="form-control") }}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        {{ form.horario_fechamento.label(class="form-label") }}
+                        {{ form.horario_fechamento(class="form-control") }}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="form-check form-switch mb-3">
+                        {{ form.notificacoes_por_email(class="form-check-input") }}
+                        {{ form.notificacoes_por_email.label(class="form-check-label") }}
+                    </div>
+                    
+                    <div class="form-check form-switch mb-3">
+                        {{ form.modo_manutencao(class="form-check-input") }}
+                        {{ form.modo_manutencao.label(class="form-check-label") }}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        {{ form.mensagem_manutencao.label(class="form-label") }}
+                        {{ form.mensagem_manutencao(class="form-control", rows="3") }}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>Salvar Configurações
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+// Inicializa os tooltips
+$(function () {
+    $('[data-bs-toggle="tooltip"]').tooltip()
+})
+</script>
+{% endblock %}

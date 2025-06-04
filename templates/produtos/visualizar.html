@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Visualizar Produto - {{ produto.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="bi bi-eye"></i> Visualizar Produto
+        </h1>
+        <div>
+            <a href="{{ url_for('main.listar_produtos') }}" class="btn btn-secondary btn-sm me-2">
+                <i class="bi bi-arrow-left"></i> Voltar para Lista
+            </a>
+            {% if has_permission(current_user, 'main.editar_produto') %}
+            <a href="{{ url_for('main.editar_produto', id=produto.id) }}" class="btn btn-primary btn-sm">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Informações do Produto</h6>
+                    <span class="badge bg-{{ 'success' if produto.ativo else 'secondary' }}">
+                        {{ 'Ativo' if produto.ativo else 'Inativo' }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Código:</div>
+                        <div class="col-md-8">{{ produto.codigo }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Nome:</div>
+                        <div class="col-md-8">{{ produto.nome }}</div>
+                    </div>
+                    {% if produto.descricao %}
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Descrição:</div>
+                        <div class="col-md-8">{{ produto.descricao|nl2br }}</div>
+                    </div>
+                    {% endif %}
+                    {% if produto.categoria %}
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Categoria:</div>
+                        <div class="col-md-8">{{ produto.categoria }}</div>
+                    </div>
+                    {% endif %}
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Preço de Custo:</div>
+                        <div class="col-md-8">R$ {{ "%.2f"|format(produto.preco_compra)|replace('.', ',') }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Preço de Venda:</div>
+                        <div class="col-md-8">R$ {{ "%.2f"|format(produto.preco_venda)|replace('.', ',') }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Unidade de Medida:</div>
+                        <div class="col-md-8">{{ produto.unidade_medida_display() }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Estoque</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6 fw-bold">Estoque Atual:</div>
+                        <div class="col-md-6">
+                            <span class="{{ 'text-danger' if produto.estoque_baixo else '' }}">
+                                {{ "%.2f"|format(produto.estoque_atual) }} {{ produto.unidade_medida }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6 fw-bold">Estoque Mínimo:</div>
+                        <div class="col-md-6">{{ "%.2f"|format(produto.estoque_minimo) }} {{ produto.unidade_medida }}</div>
+                    </div>
+                    {% if produto.estoque_baixo %}
+                    <div class="alert alert-warning" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Atenção: O estoque está abaixo do mínimo definido!
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Informações Adicionais</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-md-6 fw-bold">Data de Cadastro:</div>
+                        <div class="col-md-6">{{ produto.data_cadastro.strftime('%d/%m/%Y %H:%M') }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 fw-bold">Última Atualização:</div>
+                        <div class="col-md-6">
+                            {% if produto.data_atualizacao %}
+                                {{ produto.data_atualizacao.strftime('%d/%m/%Y %H:%M') }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Adicione aqui qualquer JavaScript adicional necessário
+    document.addEventListener('DOMContentLoaded', function() {
+        // Código JavaScript adicional, se necessário
+    });
+</script>
+{% endblock %}

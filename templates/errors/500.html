@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Erro no Servidor - SisOvos{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <div class="error-template">
+                <h1>500</h1>
+                <h2>Erro no Servidor</h2>
+                <div class="error-details">
+                    Ocorreu um erro inesperado no servidor. Por favor, tente novamente mais tarde.
+                </div>
+                <div class="error-actions mt-4">
+                    <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-home"></i> Página Inicial
+                    </a>
+                    <a href="{{ url_for('main.contact') }}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-envelope"></i> Relatar Problema
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .error-template {
+        padding: 40px 15px;
+        text-align: center;
+    }
+    .error-actions {
+        margin-top: 15px;
+        margin-bottom: 15px;
+    }
+    .error-actions .btn {
+        margin-right: 10px;
+    }
+    h1 {
+        font-size: 5em;
+        color: #e74c3c;
+    }
+</style>
+{% endblock %}

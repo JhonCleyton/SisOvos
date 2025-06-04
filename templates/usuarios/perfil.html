@@ -1,0 +1,148 @@
+{% extends "usuarios/base_usuarios.html" %}
+
+{% block page_title %}Meu Perfil{% endblock %}
+
+{% block page_actions %}
+    <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar
+    </a>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-person-circle me-2"></i>Meu Perfil</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="perfilForm">
+                    {{ form.hidden_tag() }}
+                    {{ form.id() }}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ form.nome.label(class="form-label") }}
+                                {{ form.nome(class="form-control" + (" is-invalid" if form.nome.errors else "")) }}
+                                {% for error in form.nome.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ form.username.label(class="form-label") }}
+                                {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else "")) }}
+                                {% for error in form.username.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ form.email.label(class="form-label") }}
+                                {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else "")) }}
+                                {% for error in form.email.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ form.telefone.label(class="form-label") }}
+                                {{ form.telefone(class="form-control" + (" is-invalid" if form.telefone.errors else "")) }}
+                                <small class="form-text text-muted">Ex: (00) 00000-0000</small>
+                                {% for error in form.telefone.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    <h5 class="mb-3">Alterar Senha</h5>
+                    <p class="text-muted">Deixe em branco se não quiser alterar a senha.</p>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                {{ form.senha_atual.label(class="form-label") }}
+                                {{ form.senha_atual(class="form-control" + (" is-invalid" if form.senha_atual.errors else "")) }}
+                                {% for error in form.senha_atual.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                {{ form.nova_senha.label(class="form-label") }}
+                                {{ form.nova_senha(class="form-control" + (" is-invalid" if form.nova_senha.errors else "")) }}
+                                {% for error in form.nova_senha.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                {{ form.confirmar_nova_senha.label(class="form-label") }}
+                                {{ form.confirmar_nova_senha(class="form-control" + (" is-invalid" if form.confirmar_nova_senha.errors else "")) }}
+                                {% for error in form.confirmar_nova_senha.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Salvar Alterações
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(document).ready(function() {
+    // Aplica máscara para o telefone
+    $('#telefone').mask('(00) 00000-0000');
+    
+    // Validação do formulário
+    $('#perfilForm').on('submit', function(e) {
+        const novaSenha = $('#nova_senha').val();
+        const confirmarSenha = $('#confirmar_nova_senha').val();
+        const senhaAtual = $('#senha_atual').val();
+        
+        // Se tentou alterar a senha mas não preencheu a senha atual
+        if ((novaSenha || confirmarSenha) && !senhaAtual) {
+            e.preventDefault();
+            toastr.error('Por favor, informe a senha atual para alterar a senha.');
+            return false;
+        }
+        
+        // Se preencheu a senha atual mas não preencheu a nova senha
+        if (senhaAtual && !novaSenha) {
+            e.preventDefault();
+            toastr.error('Por favor, informe a nova senha.');
+            return false;
+        }
+        
+        // Se as senhas não conferem
+        if (novaSenha !== confirmarSenha) {
+            e.preventDefault();
+            toastr.error('As senhas não conferem.');
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

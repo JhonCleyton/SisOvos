@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+
+{% block title %}Venda #{{ venda.id }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-receipt"></i> Venda #{{ venda.id }}</h2>
+    <div class="btn-group">
+        {# Print functionality disabled - endpoint not implemented
+        <a href="#" class="btn btn-outline-secondary" disabled>
+            <i class="bi bi-printer"></i> Imprimir
+        </a>
+        #}
+        {% if venda.status != 'cancelada' %}
+            <!-- Edit functionality not implemented -->
+            <button class="btn btn-outline-secondary" disabled>
+                <i class="bi bi-pencil"></i> Editar (Não implementado)
+            </button>
+            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelarVendaModal">
+                <i class="bi bi-x-circle"></i> Cancelar Venda
+            </button>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Itens da Venda</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Produto</th>
+                                <th class="text-center">Quantidade</th>
+                                <th class="text-end">Preço Unit.</th>
+                                <th class="text-end">Desconto</th>
+                                <th class="text-end">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in venda.itens %}
+                            <tr>
+                                <td>
+                                    <strong>{{ item.produto.nome }}</strong><br>
+                                    <small class="text-muted">{{ item.produto.codigo_barras or 'Sem código' }}</small>
+                                </td>
+                                <td class="text-center">{{ "%.3f"|format(item.quantidade) }} {{ item.produto.unidade_medida }}</td>
+                                <td class="text-end">R$ {{ "%.2f"|format(item.preco_unitario) }}</td>
+                                <td class="text-end">
+                                    {% if item.desconto %}
+                                        {{ "%.2f"|format(item.desconto) }}%
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">R$ {{ "%.2f"|format(item.quantidade * item.preco_unitario * (1 - (item.desconto or 0) / 100)) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                {% if venda.status != 'finalizada' and venda.status != 'cancelada' %}
+                <div class="card-footer bg-light">
+                    <h6 class="mb-3">Adicionar Item</h6>
+                    <form method="POST" action="{{ url_for('main.adicionar_item_venda', venda_id=venda.id) }}" class="row g-3">
+                        {{ form.hidden_tag() }}
+                        <div class="col-md-5">
+                            {{ form.produto_id.label(class="form-label") }}
+                            {{ form.produto_id(class="form-select") }}
+                        </div>
+                        <div class="col-md-2">
+                            {{ form.quantidade.label(class="form-label") }}
+                            {{ form.quantidade(class="form-control") }}
+                        </div>
+                        <div class="col-md-2">
+                            {{ form.preco_unitario.label(class="form-label") }}
+                            {{ form.preco_unitario(class="form-control") }}
+                        </div>
+                        <div class="col-md-2">
+                            {{ form.desconto.label(class="form-label") }}
+                            {{ form.desconto(class="form-control") }}
+                        </div>
+                        <div class="col-md-1 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary btn-sm w-100">
+                                <i class="bi bi-plus-lg"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Histórico de Atualizações</h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    {% for historico in venda.historico|sort(attribute='data_atualizacao', reverse=true) %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <div class="d-flex justify-content-between">
+                                <h6 class="mb-0">
+                                    {% if historico.status == 'pendente' %}
+                                        <i class="bi bi-hourglass-split text-warning"></i> Venda iniciada
+                                    {% elif historico.status == 'finalizada' %}
+                                        <i class="bi bi-check-circle text-success"></i> Venda finalizada
+                                    {% elif historico.status == 'cancelada' %}
+                                        <i class="bi bi-x-circle text-danger"></i> Venda cancelada
+                                    {% else %}
+                                        <i class="bi bi-pencil-square text-primary"></i> Venda atualizada
+                                    {% endif %}
+                                </h6>
+                                <small class="text-muted">{{ historico.data_alteracao|datetimeformat }}</small>
+                            </div>
+                            <div class="text-muted">
+                                <small>
+                                    {% if historico.usuario %}
+                                        Por {{ historico.usuario.nome }}
+                                    {% else %}
+                                        Sistema
+                                    {% endif %}
+                                </small>
+                            </div>
+                            {% if historico.observacao %}
+                                <p class="mt-2 mb-0">{{ historico.observacao }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-3">
+                        Nenhum histórico disponível.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Resumo da Venda</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Status</label>
+                    <div>
+                        <span class="badge bg-{{ 'success' if venda.status == 'finalizada' else 'danger' if venda.status == 'cancelada' else 'warning' }} text-uppercase">
+                            {{ venda.status }}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Data da Venda</label>
+                    <div>{{ venda.data_venda|datetimeformat }}</div>
+                </div>
+                
+                {% if venda.data_pagamento %}
+                <div class="mb-3">
+                    <label class="form-label">Data do Pagamento</label>
+                    <div class="text-success">{{ venda.data_pagamento|datetimeformat('%d/%m/%Y %H:%M') }}</div>
+                </div>
+                {% endif %}
+                
+                {% if venda.data_cancelamento %}
+                <div class="mb-3">
+                    <label class="form-label">Data de Cancelamento</label>
+                    <div class="text-danger">{{ venda.data_cancelamento|datetimeformat('%d/%m/%Y %H:%M') }}</div>
+                </div>
+                {% endif %}
+                
+                <div class="mb-3">
+                    <label class="form-label">Cliente</label>
+                    <div>
+                        {{ venda.nome_do_cliente }}
+                        {% if venda.cliente %}
+                            <small class="text-muted">
+                                {% if venda.cliente.cpf_cnpj %}
+                                    {{ venda.cliente.cpf_cnpj|format_cpf_cnpj }}<br>
+                                {% endif %}
+                                {% if venda.cliente.telefone %}
+                                    {{ venda.cliente.telefone|format_telefone }}
+                                {% endif %}
+                            </small>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Forma de Pagamento</label>
+                    <div class="text-capitalize">{{ venda.forma_pagamento|replace('_', ' ') }}</div>
+                </div>
+                
+                {% if venda.parcelas and venda.parcelas > 1 %}
+                <div class="mb-3">
+                    <label class="form-label">Parcelas</label>
+                    <div>{{ venda.parcelas }}x de R$ {{ "%.2f"|format(venda.valor_total / venda.parcelas) }}</div>
+                </div>
+                {% endif %}
+                
+                <hr>
+                
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Subtotal:</span>
+                    <span>R$ {{ "%.2f"|format(venda.itens|sum(attribute='total')|float) }}</span>
+                </div>
+                
+                {% if venda.desconto > 0 %}
+                <div class="d-flex justify-content-between mb-2 text-danger">
+                    <span>Desconto:</span>
+                    <span>- R$ {{ "%.2f"|format(venda.desconto) }}</span>
+                </div>
+                {% endif %}
+                
+                <div class="d-flex justify-content-between fw-bold fs-5 mt-3">
+                    <span>Total:</span>
+                    <span>R$ {{ "%.2f"|format(venda.valor_total) }}</span>
+                </div>
+                
+                {% if venda.observacoes %}
+                <hr>
+                <div class="mt-3">
+                    <label class="form-label">Observações</label>
+                    <p class="mb-0">{{ venda.observacoes }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Ações Rápidas</h5>
+            </div>
+            <div class="list-group list-group-flush">
+                {% if venda.status == 'rascunho' %}
+                <form method="POST" action="{{ url_for('main.finalizar_venda', venda_id=venda.id) }}" class="d-inline w-100">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="list-group-item list-group-item-action list-group-item-success w-100 text-start"
+                            onclick="return confirm('Tem certeza que deseja finalizar esta venda? Esta ação não pode ser desfeita.');">
+                        <i class="bi bi-check-circle me-2"></i> Finalizar Venda
+                    </button>
+                </form>
+                {% endif %}
+                <!-- Print functionality not implemented -->
+                <a href="#" class="list-group-item list-group-item-action text-muted" style="cursor: not-allowed; opacity: 0.6;" disabled>
+                    <i class="bi bi-receipt me-2"></i> Imprimir Nota Fiscal (Não implementado)
+                </a>
+                <!-- Email functionality not implemented -->
+                <a href="#" class="list-group-item list-group-item-action text-muted" style="cursor: not-allowed; opacity: 0.6;" disabled>
+                    <i class="bi bi-envelope me-2"></i> Enviar por E-mail (Não implementado)
+                </a>
+                <!-- Duplicate sale functionality not implemented -->
+                <a href="#" class="list-group-item list-group-item-action text-muted" style="cursor: not-allowed; opacity: 0.6;" disabled>
+                    <i class="bi bi-files me-2"></i> Duplicar Venda (Não implementado)
+                </a>
+                {% if venda.status != 'cancelada' %}
+                <a href="#" class="list-group-item list-group-item-action text-danger" data-bs-toggle="modal" data-bs-target="#cancelarVendaModal">
+                    <i class="bi bi-x-circle me-2"></i> Cancelar Venda
+                </a>
+                {% endif %}
+                
+                <!-- Debug informações -->
+                <div class="alert alert-info small p-2 mb-2">
+                    <strong>Debug:</strong><br>
+                    Status: {{ venda.status }}<br>
+                    Data Pagamento: {{ venda.data_pagamento }}<br>
+                    Usuário tem permissão de financeiro: {{ current_user.tem_permissao('financeiro') }}<br>
+                    Função do usuário: {{ current_user.funcao }}
+                </div>
+                
+                {% if venda.status == 'finalizada' and not venda.data_pagamento and current_user.tem_permissao('financeiro') %}
+                <form method="POST" action="{{ url_for('main.aprovar_pagamento', venda_id=venda.id) }}" class="d-inline w-100">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="list-group-item list-group-item-action list-group-item-primary w-100 text-start"
+                            onclick="return confirm('Tem certeza que deseja aprovar o pagamento desta venda? Esta ação não pode ser desfeita.');">
+                        <i class="bi bi-currency-dollar me-2"></i> Aprovar Pagamento
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Cancelar Venda -->
+<div class="modal fade" id="cancelarVendaModal" tabindex="-1" aria-labelledby="cancelarVendaModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="cancelarVendaModalLabel">Confirmar Cancelamento</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('main.cancelar_venda', venda_id=venda.id) }}">
+                <div class="modal-body">
+                    <p>Tem certeza que deseja cancelar esta venda? Esta ação não pode ser desfeita.</p>
+                    <div class="mb-3">
+                        <label for="motivo_cancelamento" class="form-label">Motivo do Cancelamento</label>
+                        <textarea class="form-control" id="motivo_cancelamento" name="motivo_cancelamento" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Voltar</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-x-circle"></i> Confirmar Cancelamento
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Função para confirmar cancelamento
+function confirmarCancelamento() {
+    const motivo = document.getElementById('motivo_cancelamento').value.trim();
+    if (!motivo) {
+        alert('Por favor, informe o motivo do cancelamento.');
+        return false;
+    }
+    
+    if (confirm('Tem certeza que deseja cancelar esta venda? Esta ação não pode ser desfeita.')) {
+        // Adiciona um indicador de carregamento
+        const btn = document.querySelector('#cancelarVendaModal .btn-danger');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processando...';
+        
+        // Envia o formulário
+        document.getElementById('formCancelarVenda').submit();
+    }
+    
+    return false;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,88 @@
+<!-- Modal Editar Item -->
+<div class="modal fade" id="editarItemModal" tabindex="-1" aria-labelledby="editarItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editarItemModalLabel">
+                    <i class="bi bi-pencil-square"></i> Editar Item da Venda
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form id="formEditarItem" action="" method="POST">
+                <div class="modal-body">
+                    {{ form.hidden_tag() }}
+                    <input type="hidden" name="item_id" id="editar_item_id">
+                    
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="alert alert-info mb-0">
+                                <i class="bi bi-info-circle"></i> Produto: <strong id="info_produto_nome">---</strong>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editar_quantidade" class="form-label">Quantidade *</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="editar_quantidade" name="quantidade" 
+                                           step="0.001" min="0.001" required>
+                                    <span class="input-group-text" id="editar_unidade_medida">---</span>
+                                </div>
+                                <div class="form-text">Estoque disponível: <span id="editar_estoque_disponivel">0</span></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editar_preco_unitario" class="form-label">Preço Unitário *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    <input type="number" class="form-control" id="editar_preco_unitario" name="preco_unitario" 
+                                           step="0.01" min="0.01" required>
+                                </div>
+                                <div class="form-text">Preço original: R$ <span id="editar_preco_original">0,00</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editar_desconto" class="form-label">Desconto</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="editar_desconto" name="desconto" 
+                                           step="0.1" min="0" max="100" value="0">
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                <div class="form-text">Valor com desconto: R$ <span id="editar_valor_com_desconto">0,00</span></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editar_valor_total" class="form-label">Valor Total</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    <input type="text" class="form-control" id="editar_valor_total" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editar_observacoes" class="form-label">Observações</label>
+                        <textarea class="form-control" id="editar_observacoes" name="observacoes" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="btnSalvarItem">
+                        <i class="bi bi-check-lg"></i> Salvar Alterações
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

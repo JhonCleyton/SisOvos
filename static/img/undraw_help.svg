@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400" height="300" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="400" height="300" fill="#F8F9FC"/>
+    <circle cx="200" cy="150" r="100" fill="#4E73DF" fill-opacity="0.2"/>
+    <path d="M200 100C211.046 100 220 108.954 220 120C220 131.046 211.046 140 200 140C188.954 140 180 131.046 180 120C180 108.954 188.954 100 200 100ZM200 180C213.255 180 224 190.745 224 204V220H176V204C176 190.745 186.745 180 200 180Z" fill="#4E73DF"/>
+    <text x="200" y="250" font-family="Arial" font-size="16" text-anchor="middle" fill="#5A5C69">Central de Ajuda</text>
+</svg>

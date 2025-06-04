@@ -1,0 +1,152 @@
+{% extends "configuracoes/base.html" %}
+
+{% block title %}Configurações de Segurança{% endblock %}
+
+{% block config_content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-shield-alt me-2"></i>
+                    Configurações de Segurança
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('configuracoes.seguranca') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.forca_senha.label(class="form-label") }}
+                        {{ form.forca_senha(class="form-select") }}
+                        {% if form.forca_senha.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.forca_senha.errors[0] }}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">Define os requisitos mínimos para senhas de usuários.</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            {{ form.autenticacao_dois_fatores(class="form-check-input") }}
+                            {{ form.autenticacao_dois_fatores.label(class="form-check-label") }}
+                        </div>
+                        {% if form.autenticacao_dois_fatores.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.autenticacao_dois_fatores.errors[0] }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            {{ form.bloqueio_tentativas(class="form-check-input") }}
+                            {{ form.bloqueio_tentativas.label(class="form-check-label") }}
+                        </div>
+                        {% if form.bloqueio_tentativas.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.bloqueio_tentativas.errors[0] }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.tempo_sessao.label(class="form-label") }}
+                        {{ form.tempo_sessao(class="form-control") }}
+                        {% if form.tempo_sessao.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.tempo_sessao.errors[0] }}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">Tempo de inatividade antes do usuário ser desconectado automaticamente.</small>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Salvar Configurações
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Zona de Perigo
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <h6 class="alert-heading">Atenção!</h6>
+                    <p class="mb-0">As alterações nesta seção podem afetar significativamente a segurança do sistema. Use com cautela.</p>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#limparSessoesModal">
+                        <i class="fas fa-sign-out-alt me-2"></i>Desconectar todos os usuários
+                    </button>
+                    
+                    <button type="button" class="btn btn-outline-danger mt-2" data-bs-toggle="modal" data-bs-target="#redefinirSenhasModal">
+                        <i class="fas fa-key me-2"></i>Forçar redefinição de senha na próxima autenticação
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Limpar Sessões -->
+<div class="modal fade" id="limparSessoesModal" tabindex="-1" aria-labelledby="limparSessoesModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="limparSessoesModalLabel">Confirmar ação</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja desconectar todos os usuários do sistema?</p>
+                <p class="text-danger">Isso desconectará todos os usuários, incluindo você, que precisará fazer login novamente.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <a href="{{ url_for('configuracoes.limpar_sessoes') }}" class="btn btn-danger">Confirmar</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Redefinir Senhas -->
+<div class="modal fade" id="redefinirSenhasModal" tabindex="-1" aria-labelledby="redefinirSenhasModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="redefinirSenhasModalLabel">Confirmar ação</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja forçar a redefinição de senha para todos os usuários na próxima autenticação?</p>
+                <p class="text-warning">Todos os usuários serão obrigados a criar uma nova senha ao fazerem login.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <a href="{{ url_for('configuracoes.forcar_redefinicao_senha') }}" class="btn btn-warning">Confirmar</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+// Inicializa os tooltips
+$(function () {
+    $('[data-bs-toggle="tooltip"]').tooltip()
+})
+</script>
+{% endblock %}

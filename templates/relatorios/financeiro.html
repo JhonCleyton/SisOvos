@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}Relatório Financeiro{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-graph-up"></i> Relatório Financeiro</h2>
+    <div>
+        <a href="{{ url_for('main.financeiro') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Voltar para Financeiro
+        </a>
+        <a href="{{ url_for('relatorios.exportar_relatorio_financeiro') }}?data_inicio={{ data_inicio }}&data_fim={{ data_fim }}" 
+           class="btn btn-success">
+            <i class="bi bi-file-earmark-excel"></i> Exportar para Excel
+        </a>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="data_inicio" class="form-label">Data Início</label>
+                <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ data_inicio }}">
+            </div>
+            <div class="col-md-4">
+                <label for="data_fim" class="form-label">Data Fim</label>
+                <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ data_fim }}">
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="bi bi-funnel"></i> Filtrar
+                </button>
+                <a href="{{ url_for('relatorios.relatorio_financeiro') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-lg"></i> Limpar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Resumo Financeiro -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-light">
+            <div class="card-body text-center">
+                <h5 class="card-title">Total de Vendas</h5>
+                <h3>{{ total_vendas }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-light">
+            <div class="card-body text-center">
+                <h5 class="card-title">Total Recebido</h5>
+                <h3 class="text-success">R$ {{ "%.2f"|format(total_recebido) }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-light">
+            <div class="card-body text-center">
+                <h5 class="card-title">Total Pendente</h5>
+                <h3 class="text-warning">R$ {{ "%.2f"|format(total_pendente) }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-light">
+            <div class="card-body text-center">
+                <h5 class="card-title">Total Cancelado</h5>
+                <h3 class="text-danger">R$ {{ "%.2f"|format(total_cancelado) }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráfico de Vendas -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Vendas por Período</h5>
+    </div>
+    <div class="card-body">
+        <div class="text-center">
+            <img src="data:image/png;base64,{{ grafico_vendas }}" alt="Gráfico de Vendas" class="img-fluid">
+        </div>
+    </div>
+</div>
+
+<!-- Tabela de Vendas -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Detalhamento de Vendas</h5>
+        <span class="text-muted">{{ vendas|length }} vendas encontradas</span>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Data</th>
+                        <th>Cliente</th>
+                        <th class="text-end">Valor</th>
+                        <th>Status</th>
+                        <th>Forma de Pagamento</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for venda in vendas %}
+                    <tr class="{% if venda.status == 'finalizada' and venda.data_pagamento %}table-success{% elif venda.status == 'cancelada' %}table-danger{% elif venda.status == 'finalizada' and not venda.data_pagamento %}table-warning{% endif %}">
+                        <td>{{ venda.id }}</td>
+                        <td>{{ venda.data_venda.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td>{{ venda.cliente.nome if venda.cliente else 'Cliente não informado' }}</td>
+                        <td class="text-end">R$ {{ "%.2f"|format(venda.valor_total) }}</td>
+                        <td>
+                            {% if venda.status == 'finalizada' %}
+                                {% if venda.data_pagamento %}
+                                    <span class="badge bg-success">Pago</span>
+                                    <small class="d-block text-muted">Aprovado em: {{ venda.data_pagamento.strftime('%d/%m/%Y %H:%M') }}</small>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">Aguardando Aprovação</span>
+                                    <small class="d-block text-muted">Finalizada em: {{ venda.data_atualizacao.strftime('%d/%m/%Y %H:%M') }}</small>
+                                {% endif %}
+                            {% elif venda.status == 'cancelada' %}
+                                <span class="badge bg-danger">Cancelada</span>
+                                {% if venda.data_cancelamento %}
+                                    <small class="d-block text-muted">Cancelada em: {{ venda.data_cancelamento.strftime('%d/%m/%Y %H:%M') }}</small>
+                                {% endif %}
+                            {% elif venda.status == 'pendente' %}
+                                <span class="badge bg-info">Em Andamento</span>
+                                <small class="d-block text-muted">Atualizada em: {{ venda.data_atualizacao.strftime('%d/%m/%Y %H:%M') }}</small>
+                            {% elif venda.status == 'rascunho' %}
+                                <span class="badge bg-secondary">Rascunho</span>
+                                <small class="d-block text-muted">Criada em: {{ venda.data_criacao.strftime('%d/%m/%Y %H:%M') }}</small>
+                            {% else %}
+                                <span class="badge bg-light text-dark">{{ venda.status|title }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ venda.forma_pagamento|replace('_', ' ')|title }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center">Nenhuma venda encontrada no período selecionado.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(document).ready(function() {
+    // Configura o datepicker para os campos de data
+    $('#data_inicio, #data_fim').on('change', function() {
+        const dataInicio = new Date($('#data_inicio').val());
+        const dataFim = new Date($('#data_fim').val());
+        
+        if (dataInicio && dataFim && dataInicio > dataFim) {
+            alert('A data de início não pode ser maior que a data de fim.');
+            $(this).val('');
+        }
+    });
+});
+</script>
+{% endblock %}

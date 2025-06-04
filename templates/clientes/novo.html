@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Novo Cliente - SisOvos{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="bi bi-person-plus"></i> Novo Cliente
+        </h1>
+        <a href="{{ url_for('main.listar_clientes') }}" class="btn btn-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Voltar para Lista
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Dados do Cliente</h6>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('main.novo_cliente') }}">
+                {{ form.hidden_tag() }}
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            {{ form.nome.label(class="form-label") }}
+                            {{ form.nome(class="form-control" + (' is-invalid' if form.nome.errors else ''), placeholder="Nome completo") }}
+                            {% if form.nome.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.nome.errors[0] }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.email.label(class="form-label") }}
+                            {{ form.email(class="form-control" + (' is-invalid' if form.email.errors else ''), placeholder="email@exemplo.com") }}
+                            {% if form.email.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.email.errors[0] }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.telefone.label(class="form-label") }}
+                            {{ form.telefone(class="form-control" + (' is-invalid' if form.telefone.errors else ''), placeholder="(00) 00000-0000") }}
+                            {% if form.telefone.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.telefone.errors[0] }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group mb-3">
+                    {{ form.endereco.label(class="form-label") }}
+                    {{ form.endereco(class="form-control" + (' is-invalid' if form.endereco.errors else ''), rows=3, placeholder="Endereço completo") }}
+                    {% if form.endereco.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.endereco.errors[0] }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group form-check mb-3">
+                    {{ form.ativo(class="form-check-input" + (' is-invalid' if form.ativo.errors else '')) }}
+                    {{ form.ativo.label(class="form-check-label") }}
+                    {% if form.ativo.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.ativo.errors[0] }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{{ url_for('main.listar_clientes') }}" class="btn btn-secondary me-md-2">
+                        <i class="bi bi-x-lg"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Salvar Cliente
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Máscara para o campo de telefone
+    document.addEventListener('DOMContentLoaded', function() {
+        const telefoneInput = document.getElementById('{{ form.telefone.id }}');
+        
+        if (telefoneInput) {
+            telefoneInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                
+                if (value.length > 11) {
+                    value = value.substring(0, 11);
+                }
+                
+                if (value.length > 0) {
+                    value = value.replace(/(\d{0,2})(\d{0,5})(\d{0,4})/, function(match, p1, p2, p3) {
+                        let result = '';
+                        if (p1) result += `(${p1}`;
+                        if (p2) result += `) ${p2}`;
+                        if (p3) result += `-${p3}`;
+                        return result;
+                    });
+                }
+                
+                e.target.value = value;
+            });
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Editar' if produto else 'Novo' }} Produto{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">
+                    <i class="bi bi-{{ 'pencil' if produto else 'plus' }}-square"></i>
+                    {{ 'Editar' if produto else 'Novo' }} Produto
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data" id="produtoForm" novalidate onsubmit="return validateForm()">
+                    {{ form.hidden_tag() }}
+                    {% if produto %}
+                        <input type="hidden" name="id" value="{{ produto.id }}">
+                    {% endif %}
+                    
+                    <ul class="nav nav-tabs mb-4" id="produtoTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="dados-basicos-tab" data-bs-toggle="tab" 
+                                data-bs-target="#dados-basicos" type="button" role="tab">
+                                Dados Básicos
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="estoque-tab" data-bs-toggle="tab" 
+                                data-bs-target="#estoque" type="button" role="tab">
+                                Estoque
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content" id="produtoTabsContent">
+                        <!-- Dados Básicos -->
+                        <div class="tab-pane fade show active" id="dados-basicos" role="tabpanel">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        {{ form.codigo.label(class="form-label") }}
+                                        {{ form.codigo(class="form-control" + (' is-invalid' if form.codigo.errors else '')) }}
+                                        {% for error in form.codigo.errors %}
+                                            <div class="invalid-feedback">{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        {{ form.nome.label(class="form-label") }}
+                                        {{ form.nome(class="form-control" + (' is-invalid' if form.nome.errors else '')) }}
+                                        {% for error in form.nome.errors %}
+                                            <div class="invalid-feedback">{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        {{ form.categoria.label(class="form-label") }}
+                                        {{ form.categoria(class="form-control" + (' is-invalid' if form.categoria.errors else '')) }}
+                                        {% for error in form.categoria.errors %}
+                                            <div class="invalid-feedback">{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        {{ form.unidade_medida.label(class="form-label") }}
+                                        {{ form.unidade_medida(class="form-select" + (' is-invalid' if form.unidade_medida.errors else '')) }}
+                                        {% for error in form.unidade_medida.errors %}
+                                            <div class="invalid-feedback">{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="form-group">
+                                    {{ form.descricao.label(class="form-label") }}
+                                    {{ form.descricao(class="form-control" + (' is-invalid' if form.descricao.errors else ''), rows="3") }}
+                                    {% for error in form.descricao.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Estoque -->
+                        <div class="tab-pane fade" id="estoque" role="tabpanel">
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        {{ form.preco_compra.label(class="form-label") }}
+                                        <div class="input-group">
+                                            <span class="input-group-text">R$</span>
+                                            {{ form.preco_compra(class="form-control" + (' is-invalid' if form.preco_compra.errors else '')) }}
+                                        </div>
+                                        {% for error in form.preco_compra.errors %}
+                                            <div class="invalid-feedback">{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        {{ form.preco_venda.label(class="form-label") }}
+                                        <div class="input-group">
+                                            <span class="input-group-text">R$</span>
+                                            {{ form.preco_venda(class="form-control" + (' is-invalid' if form.preco_venda.errors else '')) }}
+                                        </div>
+                                        {% for error in form.preco_venda.errors %}
+                                            <div class="invalid-feedback">{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        {{ form.estoque_atual.label(class="form-label") }}
+                                        {{ form.estoque_atual(class="form-control" + (' is-invalid' if form.estoque_atual.errors else '')) }}
+                                        {% for error in form.estoque_atual.errors %}
+                                            <div class="invalid-feedback">{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        {{ form.estoque_minimo.label(class="form-label") }}
+                                        {{ form.estoque_minimo(class="form-control" + (' is-invalid' if form.estoque_minimo.errors else '')) }}
+                                        {% for error in form.estoque_minimo.errors %}
+                                            <div class="invalid-feedback">{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <div class="form-check form-switch mt-4">
+                                            {{ form.ativo(class="form-check-input" + (' is-invalid' if form.ativo.errors else '')) }}
+                                            <label class="form-check-label" for="{{ form.ativo.id }}">Ativo</label>
+                                        </div>
+                                        {% for error in form.ativo.errors %}
+                                            <div class="invalid-feedback">{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('main.listar_produtos') }}" class="btn btn-secondary me-md-2">
+                            <i class="bi bi-arrow-left"></i> Voltar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Salvar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+<script>
+    function validateForm() {
+        // Only validate visible fields
+        let isValid = true;
+        const form = document.getElementById('produtoForm');
+        
+        // Get all required fields in the active tab
+        const activeTab = document.querySelector('.tab-pane.active');
+        const requiredFields = activeTab.querySelectorAll('[required]');
+        
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                field.classList.add('is-invalid');
+                const feedback = field.nextElementSibling;
+                if (feedback && feedback.classList.contains('invalid-feedback')) {
+                    feedback.textContent = 'Este campo é obrigatório';
+                } else {
+                    const div = document.createElement('div');
+                    div.className = 'invalid-feedback';
+                    div.textContent = 'Este campo é obrigatório';
+                    field.parentNode.insertBefore(div, field.nextSibling);
+                }
+                isValid = false;
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+        
+        return isValid;
+    }
+    
+    // Add input event listeners to clear validation on input
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('produtoForm');
+        form.querySelectorAll('input[required], select[required], textarea[required]').forEach(input => {
+            input.addEventListener('input', function() {
+                if (this.value.trim()) {
+                    this.classList.remove('is-invalid');
+                }
+            });
+        });
+    });
+</script>
+<script>
+    $(document).ready(function() {
+        // Máscaras para campos monetários
+        $('.money').mask('#.##0,00', {reverse: true});
+        
+        // Cálculo automático do preço de venda com base no custo e margem
+        function calcularPrecoVenda() {
+            const precoCusto = parseFloat($('#preco_compra').val().replace('.', '').replace(',', '.')) || 0;
+            const precoVenda = parseFloat($('#preco_venda').val().replace('.', '').replace(',', '.')) || 0;
+            
+            if (precoCusto > 0 && precoVenda > 0) {
+                const margem = ((precoVenda / precoCusto) - 1) * 100;
+                $('#margem_lucro').val(margem.toFixed(2).replace('.', ','));
+            }
+        }
+        
+        // Atualizar margem de lucro quando os preços mudarem
+        $('#preco_compra, #preco_venda').on('blur', calcularPrecoVenda);
+    });
+</script>
+{% endblock %}

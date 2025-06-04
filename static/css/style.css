@@ -1,0 +1,83 @@
+/* Estilos gerais */
+body {
+    background-color: #f8f9fa;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Estilo para o rodapé fixo */
+.footer {
+    margin-top: auto;
+}
+
+/* Cards do dashboard */
+.card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+/* Barra de navegação */
+.navbar {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.5rem;
+}
+
+/* Página de login */
+.card {
+    border: none;
+    border-radius: 10px;
+}
+
+.card-body {
+    padding: 2rem;
+}
+
+/* Ícones */
+.bi {
+    vertical-align: -0.125em;
+}
+
+/* Botões */
+.btn {
+    border-radius: 50px;
+    padding: 0.5rem 1.5rem;
+}
+
+/* Formulários */
+.form-control {
+    border-radius: 50px;
+    padding: 0.5rem 1rem;
+}
+
+/* Alertas */
+.alert {
+    border-radius: 10px;
+}
+
+/* Lista de itens */
+.list-group-item {
+    border-left: none;
+    border-right: none;
+}
+
+.list-group-item:first-child {
+    border-top: none;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .card {
+        margin-bottom: 1rem;
+    }
+}

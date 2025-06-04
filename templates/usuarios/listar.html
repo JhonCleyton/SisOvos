@@ -1,0 +1,303 @@
+{% extends "usuarios/base_usuarios.html" %}
+
+{% block page_title %}Gerenciar Usuários{% endblock %}
+
+{% block page_actions %}
+<div class="col-auto">
+    {% if has_permission(current_user, 'main.novo_usuario') %}
+    <a href="{{ url_for('main.novo_usuario') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Novo Usuário
+    </a>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block usuarios_content %}
+<div class="card">
+    <div class="card-body">
+        <form method="get" class="mb-4">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    {{ form.busca(class="form-control", placeholder="Buscar por nome ou e-mail...") }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.funcao(class="form-select") }}
+                </div>
+                <div class="col-md-3">
+                    {{ form.status(class="form-select") }}
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> Filtrar
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nome</th>
+                        <th>Usuário</th>
+                        <th>E-mail</th>
+                        <th>Função</th>
+                        <th>Status</th>
+                        <th>Cadastrado em</th>
+                        <th class="text-end">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for usuario in usuarios.items %}
+                    <tr>
+                        <td>{{ usuario.nome }}</td>
+                        <td>{{ usuario.username }}</td>
+                        <td>{{ usuario.email }}</td>
+                        <td>
+                            <span class="badge bg-{{ 'primary' if usuario.funcao == 'ADMIN' else 'secondary' }}">
+                                {{ usuario.get_funcao_display() }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if usuario.ativo %}
+                                <span class="badge bg-success">Ativo</span>
+                            {% else %}
+                                <span class="badge bg-danger">Inativo</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ usuario.data_cadastro.strftime('%d/%m/%Y') }}</td>
+                        <td class="text-end">
+                            <div class="btn-group" role="group">
+                                <a href="{{ url_for('main.editar_usuario', id=usuario.id) }}" class="btn btn-sm btn-primary" data-bs-toggle="tooltip" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% if has_permission(current_user, 'main.alterar_status_usuario') and usuario.id != current_user.id %}
+                                    {% if usuario.ativo %}
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-warning alterar-status" 
+                                                data-usuario-id="{{ usuario.id }}"
+                                                title="Desativar" 
+                                                data-bs-toggle="tooltip">
+                                            <i class="fas fa-user-slash"></i>
+                                        </button>
+                                    {% else %}
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-success alterar-status" 
+                                                data-usuario-id="{{ usuario.id }}"
+                                                title="Ativar" 
+                                                data-bs-toggle="tooltip">
+                                            <i class="fas fa-user-check"></i>
+                                        </button>
+                                    {% endif %}
+                                {% endif %}
+                                {% if has_permission(current_user, 'main.excluir_usuario') and usuario.id != current_user.id %}
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-danger excluir-usuario" 
+                                            data-usuario-id="{{ usuario.id }}"
+                                            data-usuario-nome="{{ usuario.nome }}"
+                                            title="Excluir" 
+                                            data-bs-toggle="tooltip">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center">Nenhum usuário encontrado.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginação -->
+        {% if usuarios.pages > 1 %}
+        <nav aria-label="Navegação de páginas" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if usuarios.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('main.listar_usuarios', page=usuarios.prev_num, **request.args) }}" aria-label="Anterior">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link" aria-hidden="true">&laquo;</span>
+                    </li>
+                {% endif %}
+
+                {% for page_num in usuarios.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=3) %}
+                    {% if page_num %}
+                        {% if usuarios.page == page_num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                        {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('main.listar_usuarios', page=page_num, **request.args) }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                        {% endif %}
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if usuarios.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('main.listar_usuarios', page=usuarios.next_num, **request.args) }}" aria-label="Próximo">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link" aria-hidden="true">&raquo;</span>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+// Ativar tooltips
+$(function () {
+    $('[data-bs-toggle="tooltip"]').tooltip();
+    
+    // Manipulador de clique para o botão de alterar status
+    $('.alterar-status').on('click', function() {
+        const button = $(this);
+        const usuarioId = button.data('usuario-id');
+        const csrfToken = $('meta[name="csrf-token"]').attr('content');
+        
+        // Desabilita o botão para evitar múltiplos cliques
+        button.prop('disabled', true);
+        
+        // Mostra um indicador de carregamento
+        const originalHtml = button.html();
+        button.html('<i class="fas fa-spinner fa-spin"></i>');
+        
+        // Envia a requisição AJAX
+        $.ajax({
+            url: '{{ url_for("main.alterar_status_usuario", id=0) }}'.replace('0', usuarioId),
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Atualiza a interface do usuário
+                    const isAtivo = response.novo_status;
+                    const row = button.closest('tr');
+                    
+                    // Atualiza o status na tabela
+                    const statusBadge = row.find('.badge.bg-success, .badge.bg-danger');
+                    statusBadge.removeClass('bg-success bg-danger')
+                              .addClass(isAtivo ? 'bg-success' : 'bg-danger')
+                              .text(isAtivo ? 'Ativo' : 'Inativo');
+                    
+                    // Atualiza o botão
+                    const newTitle = isAtivo ? 'Desativar' : 'Ativar';
+                    const newIcon = isAtivo ? 'fa-user-slash' : 'fa-user-check';
+                    const newClass = isAtivo ? 'btn-outline-warning' : 'btn-outline-success';
+                    
+                    button.removeClass('btn-outline-warning btn-outline-success')
+                          .addClass(newClass)
+                          .attr('title', newTitle)
+                          .find('i')
+                          .attr('class', 'fas ' + newIcon);
+                    
+                    // Mostra mensagem de sucesso
+                    toastr.success(response.message);
+                } else {
+                    // Mostra mensagem de erro
+                    toastr.error(response.message || 'Ocorreu um erro ao alterar o status do usuário.');
+                }
+            },
+            error: function(xhr) {
+                let errorMessage = 'Ocorreu um erro ao alterar o status do usuário.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+                toastr.error(errorMessage);
+            },
+            complete: function() {
+                // Restaura o botão
+                button.html(originalHtml).prop('disabled', false);
+                // Atualiza o tooltip
+                button.tooltip('dispose').tooltip();
+            }
+        });
+        
+        // Manipulador de clique para o botão de excluir usuário
+        $('.excluir-usuario').on('click', function() {
+            const button = $(this);
+            const usuarioId = button.data('usuario-id');
+            const usuarioNome = button.data('usuario-nome');
+            
+            // Mostra um modal de confirmação
+            Swal.fire({
+                title: 'Tem certeza?',
+                text: `Deseja realmente excluir o usuário "${usuarioNome}"? Esta ação não pode ser desfeita.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sim, excluir!',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Desabilita o botão para evitar múltiplos cliques
+                    button.prop('disabled', true);
+                    
+                    // Mostra um indicador de carregamento
+                    const originalHtml = button.html();
+                    button.html('<i class="fas fa-spinner fa-spin"></i>');
+                    
+                    // Envia a requisição AJAX
+                    $.ajax({
+                        url: '{{ url_for("main.excluir_usuario", id=0) }}'.replace('0', usuarioId),
+                        method: 'POST',
+                        success: function(response) {
+                            if (response.success) {
+                                // Remove a linha da tabela
+                                button.closest('tr').fadeOut(400, function() {
+                                    $(this).remove();
+                                });
+                                
+                                // Mostra mensagem de sucesso
+                                toastr.success(response.message);
+                            } else {
+                                // Mostra mensagem de erro
+                                toastr.error(response.message || 'Ocorreu um erro ao excluir o usuário.');
+                                // Restaura o botão
+                                button.html(originalHtml).prop('disabled', false);
+                            }
+                        },
+                        error: function(xhr) {
+                            let errorMessage = 'Ocorreu um erro ao excluir o usuário.';
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMessage = xhr.responseJSON.message;
+                            }
+                            toastr.error(errorMessage);
+                            // Restaura o botão
+                            button.html(originalHtml).prop('disabled', false);
+                        }
+                    });
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

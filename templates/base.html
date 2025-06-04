@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>SisOvos - {% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('main.dashboard') }}">SisOvos</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    {% if has_permission(current_user, 'main.dashboard') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.dashboard') }}">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% if has_permission(current_user, 'main.listar_produtos') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.listar_produtos') }}">
+                            <i class="bi bi-box-seam"></i> Produtos
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% if has_permission(current_user, 'relatorios.relatorio_financeiro') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('relatorios.relatorio_financeiro') }}">
+                            <i class="bi bi-cash-coin"></i> Financeiro
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% if has_permission(current_user, 'admin.painel_controle') %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="relatoriosDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-graph-up"></i> Relatórios
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="relatoriosDropdown">
+                            {% if has_permission(current_user, 'relatorios.relatorio_financeiro') %}
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('relatorios.relatorio_financeiro') }}">
+                                    <i class="bi bi-currency-dollar"></i> Financeiro
+                                </a>
+                            </li>
+                            {% endif %}
+                            {% if has_permission(current_user, 'relatorios.relatorio_estoque') %}
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('relatorios.relatorio_estoque') }}">
+                                    <i class="bi bi-box-seam"></i> Estoque
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </li>
+                    {% endif %}
+                    
+                    {% if has_permission(current_user, 'admin.painel_controle') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin.painel_controle') }}">
+                            <i class="bi bi-shield-lock"></i> Admin
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% if has_permission(current_user, 'main.listar_clientes') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.listar_clientes') }}">
+                            <i class="bi bi-people"></i> Clientes
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% if has_permission(current_user, 'main.nova_venda') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.nova_venda') }}">
+                            <i class="bi bi-cart-plus"></i> Nova Venda
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% if has_permission(current_user, 'main.listar_vendas') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.listar_vendas') }}">
+                            <i class="bi bi-receipt"></i> Vendas
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    
+                    {% if has_permission(current_user, 'main.estoque_diario') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.estoque_diario') }}">
+                            <i class="bi bi-boxes"></i> Estoque
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i> {{ current_user.nome }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            {% if current_user.is_authenticated %}
+                                <li><a class="dropdown-item" href="{{ url_for('main.perfil') }}"><i class="bi bi-person"></i> Perfil</a></li>
+                                
+                                {% if has_permission(current_user, 'relatorios.relatorio_financeiro') %}
+                                <li><a class="dropdown-item" href="{{ url_for('relatorios.relatorio_financeiro') }}">
+                                    <i class="bi bi-graph-up"></i> Relatórios Financeiros
+                                </a></li>
+                                {% endif %}
+                                
+                                {% if has_permission(current_user, 'relatorios.relatorio_estoque') %}
+                                <li><a class="dropdown-item" href="{{ url_for('relatorios.relatorio_estoque') }}">
+                                    <i class="bi bi-box-seam"></i> Relatório de Estoque
+                                </a></li>
+                                {% endif %}
+                                
+                                {% if has_permission(current_user, 'admin.painel_controle') %}
+                                <li><a class="dropdown-item" href="{{ url_for('admin.painel_controle') }}">
+                                    <i class="bi bi-speedometer"></i> Painel de Controle
+                                </a></li>
+                                {% endif %}
+                                
+                                <li><a class="dropdown-item" href="{{ url_for('main.ajuda') }}">
+                                    <i class="bi bi-question-circle"></i> Ajuda
+                                </a></li>
+                                
+                                {% if has_permission(current_user, 'main.listar_usuarios') %}
+                                <li><a class="dropdown-item" href="{{ url_for('main.listar_usuarios') }}">
+                                    <i class="bi bi-people"></i> Gerenciar Usuários
+                                </a></li>
+                                {% endif %}
+                                
+                                {% if has_permission(current_user, 'admin.painel_controle') %}
+                                <li><a class="dropdown-item" href="{{ url_for('configuracoes.sistema') }}">
+                                    <i class="bi bi-gear"></i> Configurações
+                                </a></li>
+                                {% endif %}
+                                
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('main.logout') }}">
+                                    <i class="bi bi-box-arrow-right"></i> Sair
+                                </a></li>
+                            {% else %}
+                                <li><a class="dropdown-item" href="{{ url_for('main.login') }}">
+                                    <i class="bi bi-box-arrow-in-right"></i> Entrar
+                                </a></li>
+                            {% endif %}
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        // Configuração do Toastr
+        toastr.options = {
+            "closeButton": true,
+            "progressBar": true,
+            "positionClass": "toast-top-right",
+            "timeOut": "5000",
+            "extendedTimeOut": "1000",
+            "showEasing": "swing",
+            "hideEasing": "linear",
+            "showMethod": "fadeIn",
+            "hideMethod": "fadeOut"
+        };
+        
+        // Configuração do CSRF para requisições AJAX
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", $('meta[name="csrf-token"]').attr('content'));
+                }
+            }
+        });
+    </script>
+    
+    <!-- Rodapé -->
+    <footer class="footer mt-5 py-3 bg-light">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-0">&copy; {{ now.year }} SisOvos - Todos os direitos reservados</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <span class="me-3">Desenvolvido por: Jhon Cleyton</span>
+                    <a href="mailto:tecnologiajvbyte@gmail.com" class="text-decoration-none text-muted me-2" title="E-mail">
+                        <i class="bi bi-envelope-fill"></i>
+                    </a>
+                    <a href="https://wa.me/5573998547885" target="_blank" class="text-decoration-none text-muted me-2" title="WhatsApp">
+                        <i class="bi bi-whatsapp"></i>
+                    </a>
+                    <a href="https://linkedin.com/in/jhon-freire" target="_blank" class="text-decoration-none text-muted me-2" title="LinkedIn">
+                        <i class="bi bi-linkedin"></i>
+                    </a>
+                    <a href="https://github.com/JhonCleyton" target="_blank" class="text-decoration-none text-muted" title="GitHub">
+                        <i class="bi bi-github"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-12 text-muted small">
+                    JC Byte - Soluções em Tecnologia
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

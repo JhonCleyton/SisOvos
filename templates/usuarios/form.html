@@ -1,0 +1,138 @@
+{% extends "usuarios/base_usuarios.html" %}
+
+{% block page_title %}{{ 'Editar' if form.id.data else 'Novo' }} Usuário{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item active" aria-current="page">{{ 'Editar' if form.id.data else 'Novo' }}</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="col-auto">
+    <a href="{{ url_for('main.listar_usuarios') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> Voltar
+    </a>
+</div>
+{% endblock %}
+
+{% block usuarios_content %}
+<div class="card">
+    <div class="card-body">
+        <form method="POST" enctype="multipart/form-data" novalidate>
+            {{ form.hidden_tag() }}
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        {{ form.nome.label(class="form-label") }}
+                        {{ form.nome(class="form-control" + (' is-invalid' if form.nome.errors else '')) }}
+                        {% for error in form.nome.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="form-group">
+                        {{ form.username.label(class="form-label") }}
+                        {{ form.username(class="form-control" + (' is-invalid' if form.username.errors else '')) }}
+                        <small class="form-text text-muted">Apenas letras, números, pontos e underlines.</small>
+                        {% for error in form.username.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        {{ form.email.label(class="form-label") }}
+                        {{ form.email(class="form-control" + (' is-invalid' if form.email.errors else '')) }}
+                        {% for error in form.email.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="form-group">
+                        {{ form.funcao.label(class="form-label") }}
+                        {{ form.funcao(class="form-select" + (' is-invalid' if form.funcao.errors else '')) }}
+                        {% for error in form.funcao.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        {{ form.senha.label(class="form-label") }}
+                        {{ form.senha(class="form-control" + (' is-invalid' if form.senha.errors else '')) }}
+                        <small class="form-text text-muted">
+                            {% if form.id.data %}
+                                Deixe em branco para manter a senha atual.
+                            {% else %}
+                                A senha deve ter pelo menos 6 caracteres.
+                            {% endif %}
+                        </small>
+                        {% for error in form.senha.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="form-group">
+                        {{ form.confirmar_senha.label(class="form-label") }}
+                        {{ form.confirmar_senha(class="form-control" + (' is-invalid' if form.confirmar_senha.errors else '')) }}
+                        {% for error in form.confirmar_senha.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-check mb-4">
+                {{ form.ativo(class="form-check-input") }}
+                {{ form.ativo.label(class="form-check-label") }}
+            </div>
+            
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <a href="{{ url_for('main.listar_usuarios') }}" class="btn btn-secondary me-md-2">
+                    <i class="fas fa-times"></i> Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> {{ 'Salvar Alterações' if form.id.data else 'Criar Usuário' }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+// Desabilitar o campo de confirmação de senha se a senha estiver vazia
+$(document).ready(function() {
+    const senhaField = $('#senha');
+    const confirmarSenhaField = $('#confirmar_senha');
+    
+    function toggleConfirmarSenha() {
+        if (senhaField.val() === '') {
+            confirmarSenhaField.prop('disabled', true).val('');
+        } else {
+            confirmarSenhaField.prop('disabled', false);
+        }
+    }
+    
+    // Verificar no carregamento
+    toggleConfirmarSenha();
+    
+    // Verificar na digitação
+    senhaField.on('input', toggleConfirmarSenha);
+});
+</script>
+{% endblock %}

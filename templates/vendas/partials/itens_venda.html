@@ -1,0 +1,116 @@
+<!-- Itens da Venda -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="bi bi-cart3"></i> Itens da Venda
+        </h5>
+        {% if venda.status == 'rascunho' %}
+        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#adicionarItemModal">
+            <i class="bi bi-plus-lg me-1"></i> Adicionar Item
+        </button>
+        {% endif %}
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Produto</th>
+                        <th class="text-end">Quantidade</th>
+                        <th class="text-end">Preço Unit.</th>
+                        <th class="text-end">Desconto</th>
+                        <th class="text-end">Total</th>
+                        {% if venda.status == 'rascunho' %}
+                        <th class="text-end">Ações</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if venda.itens %}
+                        {% for item in venda.itens %}
+                        <tr>
+                            <td>
+                                <strong>{{ item.produto.nome }}</strong>
+                                {% if item.observacoes %}
+                                    <br><small class="text-muted">{{ item.observacoes }}</small>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {{ "%.3f"|format(item.quantidade) }}
+                                <small class="text-muted">{{ item.produto.unidade_medida }}</small>
+                            </td>
+                            <td class="text-end">R$ {{ "%.2f"|format(item.preco_unitario) }}</td>
+                            <td class="text-end">
+                                {% if item.desconto %}{{ "%.2f"|format(item.desconto) }}%{% else %}-{% endif %}
+                            </td>
+                            <td class="text-end">
+                                <strong>R$ {{ "%.2f"|format(item.quantidade * item.preco_unitario * (1 - (item.desconto or 0) / 100)) }}</strong>
+                            </td>
+                            {% if venda.status == 'rascunho' %}
+                            <td class="text-nowrap text-end">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-outline-primary btn-editar-item" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#editarItemModal"
+                                            data-item-id="{{ item.id }}"
+                                            data-produto-id="{{ item.produto.id }}"
+                                            data-produto-nome="{{ item.produto.nome }}"
+                                            data-quantidade="{{ item.quantidade }}"
+                                            data-preco-unitario="{{ item.preco_unitario }}"
+                                            data-desconto="{{ item.desconto or 0 }}"
+                                            data-observacoes="{{ item.observacoes or '' }}">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger btn-remover-item" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#removerItemModal"
+                                            data-item-id="{{ item.id }}"
+                                            data-produto-nome="{{ item.produto.nome }}"
+                                            data-quantidade="{{ item.quantidade }}"
+                                            data-valor="{{ '%.2f'|format(item.quantidade * item.preco_unitario * (1 - (item.desconto or 0) / 100)) }}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="{% if venda.status == 'rascunho' %}6{% else %}5{% endif %}" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="bi bi-cart-x display-6 d-block mb-2"></i>
+                                    Nenhum item adicionado à venda.
+                                </div>
+                                {% if venda.status == 'rascunho' %}
+                                <button type="button" class="btn btn-sm btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#adicionarItemModal">
+                                    <i class="bi bi-plus-lg me-1"></i> Adicionar Primeiro Item
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+                {% if venda.itens %}
+                <tfoot class="table-group-divider">
+                    <tr>
+                        <th colspan="4" class="text-end">Subtotal:</th>
+                        <th class="text-end">R$ {{ "%.2f"|format(venda.itens|sum(attribute='valor_total')) }}</th>
+                        {% if venda.status == 'rascunho' %}<th></th>{% endif %}
+                    </tr>
+                    <tr>
+                        <th colspan="4" class="text-end">Desconto (R$):</th>
+                        <th class="text-end">R$ {{ "%.2f"|format(venda.desconto or 0) }}</th>
+                        {% if venda.status == 'rascunho' %}<th></th>{% endif %}
+                    </tr>
+                    <tr class="table-active">
+                        <th colspan="4" class="text-end">Total:</th>
+                        <th class="text-end">R$ {{ "%.2f"|format(venda.valor_total) }}</th>
+                        {% if venda.status == 'rascunho' %}<th></th>{% endif %}
+                    </tr>
+                </tfoot>
+                {% endif %}
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Novo Produto - SisOvos{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="bi bi-box-seam"></i> Novo Produto
+        </h1>
+        <a href="{{ url_for('main.listar_produtos') }}" class="btn btn-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Voltar para Lista
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Dados do Produto</h6>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('main.novo_produto') }}">
+                {{ form.hidden_tag() }}
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.codigo.label(class="form-label") }}
+                            {{ form.codigo(class="form-control" + (' is-invalid' if form.codigo.errors else ''), placeholder="Código do produto") }}
+                            {% if form.codigo.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.codigo.errors[0] }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.nome.label(class="form-label") }}
+                            {{ form.nome(class="form-control" + (' is-invalid' if form.nome.errors else ''), placeholder="Nome do produto") }}
+                            {% if form.nome.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.nome.errors[0] }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group mb-3">
+                    {{ form.descricao.label(class="form-label") }}
+                    {{ form.descricao(class="form-control" + (' is-invalid' if form.descricao.errors else ''), rows=2, placeholder="Descrição detalhada do produto") }}
+                    {% if form.descricao.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.descricao.errors[0] }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            {{ form.preco_compra.label(class="form-label") }}
+                            <div class="input-group">
+                                <span class="input-group-text">R$</span>
+                                {{ form.preco_compra(class="form-control" + (' is-invalid' if form.preco_compra.errors else ''), placeholder="0,00") }}
+                            </div>
+                            {% if form.preco_compra.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.preco_compra.errors[0] }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            {{ form.preco_venda.label(class="form-label") }}
+                            <div class="input-group">
+                                <span class="input-group-text">R$</span>
+                                {{ form.preco_venda(class="form-control" + (' is-invalid' if form.preco_venda.errors else ''), placeholder="0,00") }}
+                            </div>
+                            {% if form.preco_venda.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.preco_venda.errors[0] }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            {{ form.unidade_medida.label(class="form-label") }}
+                            {{ form.unidade_medida(class="form-select" + (' is-invalid' if form.unidade_medida.errors else '')) }}
+                            {% if form.unidade_medida.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.unidade_medida.errors[0] }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.estoque_atual.label(class="form-label") }}
+                            {{ form.estoque_atual(class="form-control" + (' is-invalid' if form.estoque_atual.errors else ''), placeholder="0") }}
+                            {% if form.estoque_atual.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.estoque_atual.errors[0] }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.estoque_minimo.label(class="form-label") }}
+                            {{ form.estoque_minimo(class="form-control" + (' is-invalid' if form.estoque_minimo.errors else ''), placeholder="0") }}
+                            {% if form.estoque_minimo.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.estoque_minimo.errors[0] }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group form-check mb-4">
+                    {{ form.ativo(class="form-check-input" + (' is-invalid' if form.ativo.errors else '')) }}
+                    {{ form.ativo.label(class="form-check-label") }}
+                    {% if form.ativo.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.ativo.errors[0] }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{{ url_for('main.listar_produtos') }}" class="btn btn-secondary me-md-2">
+                        <i class="bi bi-x-lg"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Salvar Produto
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Formatar campos monetários
+    document.addEventListener('DOMContentLoaded', function() {
+        // Formatar campos de preço
+        const formatarMoeda = (valor) => {
+            valor = valor.replace(/\D/g, '');
+            valor = (valor / 100).toFixed(2);
+            valor = valor.replace(/\./g, ',');
+            return 'R$ ' + valor.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        };
+
+        // Aplicar máscara de moeda nos inputs
+        const moedaInputs = document.querySelectorAll('input[type="number"][step="0.01"]');
+        moedaInputs.forEach(input => {
+            input.addEventListener('input', function(e) {
+                let valor = e.target.value.replace(/\D/g, '');
+                valor = (valor / 100).toFixed(2);
+                e.target.value = valor;
+            });
+        });
+    });
+</script>
+{% endblock %}

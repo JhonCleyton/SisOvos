@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Relatório de Estoque{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="bi bi-clipboard2-data"></i> Relatório de Estoque
+        </h1>
+        <div>
+            <a href="{{ url_for('relatorios.exportar_relatorio_estoque') }}" class="btn btn-success btn-icon-split">
+                <span class="icon text-white-50">
+                    <i class="bi bi-file-earmark-excel"></i>
+                </span>
+                <span class="text">Exportar para Excel</span>
+            </a>
+        </div>
+    </div>
+
+    {% if produtos_baixo_estoque %}
+    <div class="alert alert-warning">
+        <h5><i class="bi bi-exclamation-triangle"></i> Atenção!</h5>
+        <p class="mb-0">Existem {{ produtos_baixo_estoque|length }} produto(s) com estoque abaixo do mínimo.</p>
+    </div>
+    {% endif %}
+
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total de Itens</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_produtos }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-box-seam fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Total em Estoque</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_estoque|int }} unid.</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-box fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Valor Total em Estoque</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(total_valor_estoque) }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-currency-dollar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Itens com Estoque Baixo</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ produtos_baixo_estoque|length }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="bi bi-table"></i> Lista de Produtos em Estoque
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Produto</th>
+                            <th>Estoque Atual</th>
+                            <th>Estoque Mínimo</th>
+                            <th>Unidade</th>
+                            <th>Preço de Compra</th>
+                            <th>Preço de Venda</th>
+                            <th>Valor Total</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for produto in produtos %}
+                        <tr>
+                            <td>{{ produto.codigo }}</td>
+                            <td>{{ produto.nome }}</td>
+                            <td class="text-center">{{ "%.0f"|format(produto.estoque_atual) }}</td>
+                            <td class="text-center">{{ "%.0f"|format(produto.estoque_minimo) }}</td>
+                            <td class="text-center">{{ produto.unidade_medida }}</td>
+                            <td class="text-right">R$ {{ "%.2f"|format(produto.preco_compra) }}</td>
+                            <td class="text-right">R$ {{ "%.2f"|format(produto.preco_venda) }}</td>
+                            <td class="text-right">R$ {{ "%.2f"|format(produto.estoque_atual * produto.preco_compra) }}</td>
+                            <td class="text-center">
+                                {% if produto.estoque_atual < produto.estoque_minimo %}
+                                <span class="badge bg-danger">Estoque Baixo</span>
+                                {% else %}
+                                <span class="badge bg-success">OK</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="font-weight-bold">
+                            <td colspan="2" class="text-right">TOTAIS:</td>
+                            <td class="text-center">{{ total_estoque|int }}</td>
+                            <td colspan="4"></td>
+                            <td class="text-right">R$ {{ "%.2f"|format(total_valor_estoque) }}</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-muted small mt-4">
+        <i class="bi bi-info-circle"></i> Relatório gerado em {{ data_geracao.strftime('%d/%m/%Y %H:%M:%S') }}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Page level plugins -->
+<script src="{{ url_for('static', filename='vendor/datatables/jquery.dataTables.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/datatables/dataTables.bootstrap4.min.js') }}"></script>
+
+<!-- Page level custom scripts -->
+<script>
+    $(document).ready(function() {
+        $('#dataTable').DataTable({
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Portuguese-Brasil.json"
+            },
+            "order": [[1, "asc"]],
+            "pageLength": 25,
+            "responsive": true
+        });
+    });
+</script>
+{% endblock %}
