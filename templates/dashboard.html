@@ -192,7 +192,13 @@
                                         </a>
                                     </td>
                                     <td class="text-end">R$ {{ "%.2f"|format(venda.valor_total) }}</td>
-                                    <td class="text-end">{{ "%.1f"|format(venda.itens[0].quantidade) }} cx</td>
+                                    <td class="text-end">
+                                        {% if venda.itens %}
+                                            {{ "%.1f"|format(venda.itens[0].quantidade) }} cx
+                                        {% else %}
+                                            0.0 cx
+                                        {% endif %}
+                                    </td>
                                 </tr>
                                 {% else %}
                                 <tr>
