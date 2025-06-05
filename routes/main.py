@@ -1,3 +1,4 @@
+import uuid
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, session, send_file, abort, current_app
 from flask_login import login_required, current_user, login_user, logout_user
 from utils.auth_utils import get_password_hash
@@ -543,6 +544,28 @@ def visualizar_venda(id):
                              for p in Produto.query.filter_by(ativo=True).order_by(Produto.nome).all()]
     
     return render_template('vendas/visualizar.html', venda=venda, form=form)
+
+
+@bp.route('/vendas/<int:venda_id>/imprimir')
+@login_required
+@permissao_necessaria('FATURAMENTO', 'FINANCEIRO')
+def imprimir_venda(venda_id):
+    """Gera uma versão para impressão da venda"""
+    if not has_permission(current_user, 'main.visualizar_venda'):
+        abort(403)
+        
+    venda = Venda.query.options(
+        db.joinedload(Venda.cliente),
+        db.joinedload(Venda.usuario),
+        db.joinedload(Venda.itens).joinedload(ItemVenda.produto)
+    ).get_or_404(venda_id)
+    
+    # Gera um código de autenticação se não existir
+    if not venda.codigo_autenticacao:
+        venda.codigo_autenticacao = str(uuid.uuid4())[:8].upper()
+        db.session.commit()
+    
+    return render_template('vendas/imprimir.html', venda=venda, now=datetime.utcnow())
 
 
 @bp.route('/vendas/<int:venda_id>/itens/adicionar', methods=['POST'])

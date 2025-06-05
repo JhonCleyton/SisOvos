@@ -97,6 +97,7 @@ class Venda(db.Model):
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False)
     data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
     data_atualizacao = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    codigo_autenticacao = db.Column(db.String(20), unique=True, nullable=True)  # Código para validação do cupom
     
     # Relacionamentos
     itens = db.relationship('ItemVenda', backref='venda', lazy=True, cascade='all, delete-orphan')
