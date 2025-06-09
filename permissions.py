@@ -30,6 +30,7 @@ PERMISSIONS = {
     'main.nova_venda': ['ADMIN', 'FATURAMENTO'],
     'main.visualizar_venda': ['ADMIN', 'FATURAMENTO', 'FINANCEIRO', 'LOGISTICA'],
     'main.cancelar_venda': ['ADMIN', 'FATURAMENTO'],
+    'main.finalizar_venda': ['ADMIN', 'FATURAMENTO'],
     'main.editar_venda': ['ADMIN', 'FATURAMENTO', 'FINANCEIRO'],
     
     # Rotas Financeiras (admin e financeiro)

@@ -220,4 +220,51 @@ class HistoricoVenda(db.Model):
     usuario = db.relationship('Usuario', backref='historicos_venda')
     
     def __repr__(self):
-        return f"<HistoricoVenda {self.venda_id} - {self.status} - {self.data_alteracao}>"
+        return f"<HistoricoVenda {self.id} - Venda {self.venda_id} - {self.status}>"
+
+
+class HistoricoEstoque(db.Model):
+    """
+    Modelo para registrar o histórico de movimentações de estoque
+    """
+    __tablename__ = 'historico_estoque'
+    
+    TIPOS_MOVIMENTACAO = [
+        ('entrada', 'Entrada'),
+        ('saida', 'Saída'),
+        ('ajuste', 'Ajuste'),
+        ('devolucao', 'Devolução'),
+        ('perda', 'Perda')
+    ]
+    
+    id = db.Column(db.Integer, primary_key=True)
+    data_movimentacao = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    produto_id = db.Column(db.Integer, db.ForeignKey('produto.id'), nullable=False)
+    tipo = db.Column(db.String(20), nullable=False)  # entrada, saida, ajuste, devolucao, perda
+    quantidade = db.Column(db.Float, nullable=False)
+    saldo_anterior = db.Column(db.Float, nullable=False)
+    saldo_posterior = db.Column(db.Float, nullable=False)
+    observacao = db.Column(db.Text, nullable=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False)
+    venda_id = db.Column(db.Integer, db.ForeignKey('venda.id'), nullable=True)
+    
+    # Relacionamentos
+    produto = db.relationship('Produto', backref='historico_estoque')
+    usuario = db.relationship('Usuario', backref='movimentacoes_estoque')
+    venda = db.relationship('Venda', backref='movimentacoes_estoque')
+    
+    def __init__(self, **kwargs):
+        super(HistoricoEstoque, self).__init__(**kwargs)
+        # Garante que os saldos sejam calculados se não fornecidos
+        if not self.saldo_anterior and self.produto:
+            self.saldo_anterior = self.produto.estoque_atual
+        if not self.saldo_posterior and self.saldo_anterior is not None:
+            if self.tipo in ['entrada', 'devolucao']:
+                self.saldo_posterior = self.saldo_anterior + self.quantidade
+            elif self.tipo in ['saida', 'perda']:
+                self.saldo_posterior = self.saldo_anterior - self.quantidade
+            else:  # ajuste
+                self.saldo_posterior = self.quantidade
+    
+    def __repr__(self):
+        return f'<HistoricoEstoque {self.id} - {self.tipo} de {self.quantidade} para produto {self.produto_id}>'

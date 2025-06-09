@@ -6,7 +6,7 @@ from functools import wraps
 from datetime import datetime, timedelta
 from extensions import csrf
 
-from models import db, Usuario, Cliente, Produto, Venda, ItemVenda, EstoqueDiario, HistoricoVenda
+from models import db, Usuario, Cliente, Produto, Venda, ItemVenda, EstoqueDiario, HistoricoVenda, HistoricoEstoque
 from forms import (LoginForm, ProdutoForm, VendaForm, UsuarioForm, 
                   BuscarUsuarioForm, ClienteForm, EstoqueDiarioForm, PerfilUsuarioForm,
                   ItemVendaForm)
@@ -135,9 +135,11 @@ def dashboard():
     else:
         primeiro_dia_prox_mes = primeiro_dia_mes.replace(month=primeiro_dia_mes.month + 1, day=1)
     
+    # Filtra apenas vendas finalizadas
     vendas_mes = Venda.query.filter(
         Venda.data_venda >= primeiro_dia_mes,
-        Venda.data_venda < primeiro_dia_prox_mes
+        Venda.data_venda < primeiro_dia_prox_mes,
+        Venda.status == 'finalizada'  # Apenas vendas finalizadas
     ).all()
     
     total_vendas_mes = sum(v.valor_total for v in vendas_mes)
@@ -148,7 +150,8 @@ def dashboard():
     
     # Calcula as estatísticas de vendas de hoje
     vendas_hoje = Venda.query.filter(
-        db.func.date(Venda.data_venda) == hoje
+        db.func.date(Venda.data_venda) == hoje,
+        Venda.status == 'finalizada'  # Apenas vendas finalizadas
     ).all()
     
     total_vendas_hoje = sum(v.valor_total for v in vendas_hoje)
@@ -157,8 +160,8 @@ def dashboard():
         for v in vendas_hoje
     )
     
-    # Últimas vendas
-    ultimas_vendas = Venda.query.order_by(Venda.data_venda.desc()).limit(5).all()
+    # Últimas vendas finalizadas
+    ultimas_vendas = Venda.query.filter_by(status='finalizada').order_by(Venda.data_venda.desc()).limit(5).all()
     
     # Prepara os dados para o gráfico de vendas dos últimos 7 dias
     data_atual = hoje
@@ -166,7 +169,10 @@ def dashboard():
     
     for i in range(6, -1, -1):
         data = data_atual - timedelta(days=i)
-        vendas_dia = Venda.query.filter(db.func.date(Venda.data_venda) == data).all()
+        vendas_dia = Venda.query.filter(
+            db.func.date(Venda.data_venda) == data,
+            Venda.status == 'finalizada'
+        ).all()
         total_dia = sum(v.valor_total for v in vendas_dia)
         
         dados_grafico.append({
@@ -744,9 +750,31 @@ def finalizar_venda(venda_id):
         return redirect(url_for('main.visualizar_venda', id=venda_id))
     
     try:
+        # Verifica se há estoque suficiente para todos os itens antes de finalizar
+        # Não altera o estoque aqui, pois já foi feito ao adicionar os itens
+        for item in venda.itens:
+            if item.produto and item.produto.estoque_atual < 0:
+                # Se chegou aqui, algo deu errado, pois o estoque não pode ficar negativo
+                raise ValueError(f'Erro de consistência: Estoque insuficiente para o produto {item.produto.nome}. Estoque atual: {item.produto.estoque_atual}, quantidade vendida: {item.quantidade}')
+        
         # Atualiza o status da venda para finalizada
         venda.status = 'finalizada'
         # Não define a data de pagamento aqui - será definida na aprovação financeira
+        
+        # Registra no histórico de estoque apenas para auditoria, sem alterar o estoque novamente
+        for item in venda.itens:
+            if item.produto:
+                saldo_atual = item.produto.estoque_atual  # Já foi atualizado quando o item foi adicionado
+                db.session.add(HistoricoEstoque(
+                    produto_id=item.produto.id,
+                    tipo='saida',
+                    quantidade=item.quantidade,
+                    saldo_anterior=saldo_atual + item.quantidade,  # Volta ao valor antes da adição
+                    saldo_posterior=saldo_atual,
+                    observacao=f'Venda #{venda.id} - {item.quantidade} {item.produto.unidade_medida} de {item.produto.nome} (Finalizada)',
+                    usuario_id=current_user.id,
+                    venda_id=venda.id
+                ))
         
         # Registra no histórico
         historico = HistoricoVenda(
@@ -763,8 +791,16 @@ def finalizar_venda(venda_id):
         
     except Exception as e:
         db.session.rollback()
-        flash('Erro ao finalizar venda. Por favor, tente novamente.', 'danger')
-        current_app.logger.error(f'Erro ao finalizar venda: {str(e)}')
+        # Log do erro completo para depuração
+        import traceback
+        error_details = traceback.format_exc()
+        current_app.logger.error(f'Erro ao finalizar venda: {str(e)}\n{error_details}')
+        
+        # Verifica se é um erro de estoque insuficiente
+        if 'Estoque insuficiente' in str(e):
+            flash(f'Erro ao finalizar venda: {str(e)}', 'danger')
+        else:
+            flash('Erro ao finalizar venda. Por favor, tente novamente. Detalhes foram registrados no log.', 'danger')
     
     return redirect(url_for('main.visualizar_venda', id=venda_id))
 
@@ -829,14 +865,30 @@ def cancelar_venda(venda_id):
         flash('Esta venda já foi cancelada anteriormente.', 'warning')
         return redirect(url_for('main.visualizar_venda', id=venda_id))
     
-    # Verifica se a venda já foi finalizada
-    if venda.status == 'finalizada':
-        flash('Não é possível cancelar uma venda já finalizada.', 'danger')
-        return redirect(url_for('main.visualizar_venda', id=venda_id))
-    
     try:
         # Obtém o motivo do cancelamento do formulário
         motivo = request.form.get('motivo_cancelamento', 'Sem motivo informado')
+        
+        # Verifica se a venda está finalizada para devolver os itens ao estoque
+        if venda.status == 'finalizada':
+            for item in venda.itens:
+                if item.produto:
+                    # Obtém o saldo atual antes da atualização
+                    saldo_anterior = item.produto.estoque_atual
+                    item.produto.estoque_atual += item.quantidade
+                    saldo_posterior = saldo_anterior + item.quantidade
+                    
+                    # Registra a devolução no histórico do produto
+                    db.session.add(HistoricoEstoque(
+                        produto_id=item.produto.id,
+                        tipo='entrada',
+                        quantidade=item.quantidade,
+                        saldo_anterior=saldo_anterior,
+                        saldo_posterior=saldo_posterior,
+                        observacao=f'Devolução do cancelamento da venda #{venda.id}',
+                        usuario_id=current_user.id,
+                        venda_id=venda.id
+                    ))
         
         # Atualiza o status da venda para cancelada
         venda.status = 'cancelada'
@@ -850,12 +902,6 @@ def cancelar_venda(venda_id):
             observacao=f'Venda cancelada. Motivo: {motivo}'
         )
         db.session.add(historico)
-        
-        # Se a venda já estava finalizada, devolve os itens ao estoque
-        if venda.status == 'finalizada':
-            for item in venda.itens:
-                if item.produto:
-                    item.produto.estoque_atual += item.quantidade
         
         db.session.commit()
         
@@ -947,29 +993,64 @@ def estoque_diario():
         flash('Nenhum produto ativo encontrado.', 'warning')
         return redirect(url_for('main.dashboard'))
     
-    # Obtém ou cria o registro de estoque de hoje
+    # Obtém o registro de estoque de hoje, se existir
     estoque = EstoqueDiario.query.filter_by(
         produto_id=produto.id,
         data=hoje
     ).first()
     
+    # Busca o registro de ontem para pegar o estoque final do dia anterior
+    ontem = hoje - timedelta(days=1)
+    estoque_ontem = EstoqueDiario.query.filter_by(
+        produto_id=produto.id,
+        data=ontem
+    ).first()
+    
+    # Define o estoque inicial como 0, conforme solicitado
+    # Isso significa que o estoque final será calculado apenas com base nas entradas e saídas do dia
+    estoque_inicial = 0
+    
+    # Calcula o valor do estoque baseado no preço de compra do produto
+    # Se não houver preço de compra definido, usa 0 para evitar erros
+    valor_estoque = (estoque_inicial + (estoque.entrada if estoque else 0)) * (produto.preco_compra or 0)
+    
     if not estoque:
-        # Se não existe registro para hoje, cria um com base no estoque atual
-        valor_estoque = produto.estoque_atual * (produto.preco_compra or 0)
+        # Se não existe registro para hoje, cria um novo
         estoque = EstoqueDiario(
             data=hoje,
             produto_id=produto.id,
-            quantidade=produto.estoque_atual,
-            valor_estoque=valor_estoque,
-            estoque_inicial=produto.estoque_atual,
+            quantidade=0,  # Quantidade inicial é 0
+            valor_estoque=0,  # Valor inicial é 0
+            estoque_inicial=0,  # Estoque inicial é sempre 0
             entrada=0,
             saida=0,
-            estoque_final=produto.estoque_atual,
+            estoque_final=0,  # Estoque final inicial é 0
             observacoes='',
             usuario_id=current_user.id
         )
         db.session.add(estoque)
-        db.session.commit()
+    else:
+        # Garante que as entradas e saídas não sejam negativas
+        entrada = max(estoque.entrada or 0, 0)
+        saida = max(estoque.saida or 0, 0)
+        
+        # Atualiza os campos do estoque
+        # O estoque_inicial é sempre 0
+        estoque.entrada = entrada
+        estoque.saida = saida
+        
+        # Calcula o estoque final: entradas - saídas (já que o estoque_inicial é 0)
+        # Garante que não fique negativo
+        estoque.estoque_final = max(entrada - saida, 0)
+        
+        # Atualiza a quantidade e o valor do estoque
+        estoque.quantidade = estoque.estoque_final
+        estoque.valor_estoque = estoque.quantidade * (produto.preco_compra or 0)
+        
+        # Log para depuração
+        print(f"[ESTOQUE] Atualizando registro - Entrada: {entrada}, Saída: {saida}, Final: {estoque.estoque_final}")
+    
+    db.session.commit()
     
     # Cria o formulário
     form = EstoqueDiarioForm()
@@ -983,12 +1064,39 @@ def estoque_diario():
             print(f"[DEBUG] Dados do formulário: entrada={entrada}, observacoes={form.observacoes.data}")
             print(f"[DEBUG] Estoque antes da atualização: entrada={estoque.entrada}, saida={estoque.saida}, estoque_inicial={estoque.estoque_inicial}")
             
-            # Atualiza os dados do estoque
-            # Soma a nova entrada ao valor existente
-            estoque.entrada = (estoque.entrada or 0) + entrada
+            # Garante que os valores de entrada e saída não sejam negativos
+            nova_entrada = max(entrada, 0)
+            saida = max(estoque.saida or 0, 0)
             
-            # Calcula o estoque final corretamente
-            estoque.estoque_final = (estoque.estoque_inicial or 0) + (estoque.entrada or 0) - (estoque.saida or 0)
+            # Soma a nova entrada ao valor existente
+            # Se for a primeira entrada, usa o valor diretamente
+            if estoque.entrada is None:
+                estoque.entrada = nova_entrada
+            else:
+                estoque.entrada += nova_entrada
+            
+            # Calcula o estoque final: entradas totais - saídas (já que o estoque_inicial é 0)
+            novo_estoque_final = estoque.entrada - saida
+            
+            # Log para depuração
+            print(f"[ESTOQUE] Nova entrada: {nova_entrada}, Entrada total: {estoque.entrada}, Saída: {saida}")
+            
+            # Garante que o estoque final não fique negativo
+            if novo_estoque_final < 0:
+                flash(f'Erro: O estoque final não pode ser negativo. Saída maior que a entrada. Entrada: {entrada}, Saída: {saida}', 'danger')
+                return redirect(url_for('main.estoque_diario', produto_id=produto_id))
+                
+            # Atualiza o estoque final
+            estoque.estoque_final = novo_estoque_final
+            
+            # Log detalhado para depuração
+            print(f"[DEBUG] Cálculo do estoque: Entrada={entrada}, Saída={saida}, Final={estoque.estoque_final}")
+            
+            # Atualiza a quantidade total no registro de estoque diário
+            estoque.quantidade = estoque.estoque_final
+            
+            # Atualiza o valor total do estoque
+            estoque.valor_estoque = estoque.quantidade * (produto.preco_compra or 0)
             
             # Atualiza observações e usuário
             if form.observacoes.data:
@@ -999,8 +1107,21 @@ def estoque_diario():
                     
             estoque.usuario_id = current_user.id
             
-            # Atualiza o estoque do produto
+            # Atualiza o estoque do produto com o valor final calculado
             produto.estoque_atual = estoque.estoque_final
+            
+            # Registra a movimentação no histórico de estoque
+            db.session.add(HistoricoEstoque(
+                data_movimentacao=datetime.utcnow(),
+                produto_id=produto.id,
+                tipo='entrada' if entrada > 0 else 'ajuste',
+                quantidade=entrada,
+                saldo_anterior=estoque.estoque_inicial,
+                saldo_posterior=estoque.estoque_final,
+                observacao=form.observacoes.data or 'Atualização de estoque diário',
+                usuario_id=current_user.id,
+                venda_id=None
+            ))
             
             # Log após atualização
             print(f"[DEBUG] Estoque após atualização: entrada={estoque.entrada}, saida={estoque.saida}, estoque_final={estoque.estoque_final}")

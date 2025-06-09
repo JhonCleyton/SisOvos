@@ -29,8 +29,23 @@ def criar_estrutura_inicial():
     # Cria o usuário admin
     criar_usuario_admin()
     
-    # Adicione aqui outras inicializações necessárias
-    print('✅ Estrutura do banco de dados criada com sucesso!')
+    # Verifica se a tabela historico_estoque foi criada
+    from sqlalchemy import inspect
+    inspector = inspect(db.engine)
+    tabelas = inspector.get_table_names()
+    
+    if 'historico_estoque' not in tabelas:
+        # Tenta criar a tabela manualmente
+        try:
+            from models import HistoricoEstoque
+            HistoricoEstoque.__table__.create(db.engine)
+            print('✅ Tabela historico_estoque criada com sucesso!')
+        except Exception as e:
+            print(f'❌ Erro ao criar a tabela historico_estoque: {str(e)}')
+    else:
+        print('✅ Tabela historico_estoque já existe no banco de dados.')
+    
+    print('✅ Estrutura do banco de dados verificada com sucesso!')
 
 if __name__ == '__main__':
     # Cria a aplicação
