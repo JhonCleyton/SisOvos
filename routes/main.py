@@ -474,6 +474,7 @@ def listar_vendas():
     pagina = request.args.get('pagina', 1, type=int)
     busca = request.args.get('busca', '')
     status = request.args.get('status', 'todas')
+    status_pagamento = request.args.get('status_pagamento', '')
     data_inicio = request.args.get('data_inicio')
     data_fim = request.args.get('data_fim')
     
@@ -487,6 +488,7 @@ def listar_vendas():
             (Venda.id == busca) if busca.isdigit() else False
         )
     
+    # Filtro de status da venda
     if status == 'pendente':
         query = query.filter_by(status='pendente')
     elif status == 'finalizada':
@@ -497,6 +499,13 @@ def listar_vendas():
         query = query.filter_by(status='rascunho')
     # Se nenhum filtro de status for aplicado, mostra todos os status
     
+    # Filtro de status de pagamento
+    if status_pagamento == 'pendente':
+        query = query.filter(Venda.status == 'finalizada', Venda.data_pagamento.is_(None))
+    elif status_pagamento == 'pago':
+        query = query.filter(Venda.status == 'finalizada', Venda.data_pagamento.isnot(None))
+    
+    # Filtro por data
     if data_inicio:
         try:
             data_inicio = datetime.strptime(data_inicio, '%Y-%m-%d')
@@ -516,12 +525,17 @@ def listar_vendas():
         db.joinedload(Venda.itens).joinedload(ItemVenda.produto)
     ).order_by(Venda.data_venda.desc()).paginate(page=pagina, per_page=15, error_out=False)
     
+    # Busca a lista de clientes para o filtro
+    clientes = Cliente.query.filter_by(ativo=True).order_by(Cliente.nome).all()
+    
     return render_template('vendas/listar.html', 
                          vendas=vendas, 
                          busca=busca,
                          status=status,
+                         status_pagamento=status_pagamento,
                          data_inicio=data_inicio,
-                         data_fim=data_fim)
+                         data_fim=data_fim,
+                         clientes=clientes)
 
 @bp.route('/vendas/<int:id>')
 @login_required

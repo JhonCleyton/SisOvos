@@ -59,6 +59,14 @@
                             {% endfor %}
                         </select>
                     </div>
+                    <div class="mb-3">
+                        <label for="status_pagamento" class="form-label">Status de Pagamento</label>
+                        <select class="form-select" id="status_pagamento" name="status_pagamento">
+                            <option value="">Todos</option>
+                            <option value="pendente" {% if request.args.get('status_pagamento') == 'pendente' %}selected{% endif %}>Pagamento Pendente</option>
+                            <option value="pago" {% if request.args.get('status_pagamento') == 'pago' %}selected{% endif %}>Pago</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <a href="{{ url_for('main.listar_vendas') }}" class="btn btn-secondary me-auto">Limpar Filtros</a>
@@ -83,6 +91,7 @@
                         <th>Itens</th>
                         <th class="text-end">Valor Total</th>
                         <th class="text-center">Status</th>
+                        <th class="text-center">Pagamento</th>
                         <th class="text-end">Ações</th>
                     </tr>
                 </thead>
@@ -117,6 +126,21 @@
                             <span class="badge bg-{{ 'success' if venda.status == 'finalizada' else 'warning' if venda.status == 'pendente' else 'danger' }}">
                                 {{ venda.status|title }}
                             </span>
+                        </td>
+                        <td class="text-center">
+                            {% if venda.status == 'finalizada' %}
+                                {% if venda.pagamento_pendente %}
+                                    <span class="badge bg-warning" title="Pagamento Pendente">
+                                        <i class="bi bi-exclamation-triangle"></i> Pendente
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-success" title="Pago em {{ venda.data_pagamento.strftime('%d/%m/%Y %H:%M') }}">
+                                        <i class="bi bi-check-circle"></i> Pago
+                                    </span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge bg-secondary">N/A</span>
+                            {% endif %}
                         </td>
                         <td class="text-end">
                             <div class="btn-group" role="group">

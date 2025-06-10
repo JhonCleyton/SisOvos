@@ -116,6 +116,11 @@ class Venda(db.Model):
         if self.cliente_id:
             return self.cliente.nome
         return self.nome_cliente or 'Cliente não identificado'
+        
+    @property
+    def pagamento_pendente(self):
+        """Verifica se a venda está finalizada mas ainda não foi paga"""
+        return self.status == 'finalizada' and not self.data_pagamento
 
 
 
