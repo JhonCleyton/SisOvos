@@ -1082,7 +1082,7 @@ def estoque_diario():
             nova_entrada = max(entrada, 0)
             saida = max(estoque.saida or 0, 0)
             
-            # Soma a nova entrada ao valor existente
+            # Soma a nova entrada ao valor existente para todos os usuários
             # Se for a primeira entrada, usa o valor diretamente
             if estoque.entrada is None:
                 estoque.entrada = nova_entrada
@@ -1098,7 +1098,7 @@ def estoque_diario():
             # Garante que o estoque final não fique negativo
             if novo_estoque_final < 0:
                 flash(f'Erro: O estoque final não pode ser negativo. Saída maior que a entrada. Entrada: {entrada}, Saída: {saida}', 'danger')
-                return redirect(url_for('main.estoque_diario', produto_id=produto_id))
+                return redirect(url_for('main.estoque_diario'))
                 
             # Atualiza o estoque final
             estoque.estoque_final = novo_estoque_final
@@ -1130,8 +1130,8 @@ def estoque_diario():
                 produto_id=produto.id,
                 tipo='entrada' if entrada > 0 else 'ajuste',
                 quantidade=entrada,
-                saldo_anterior=estoque.estoque_inicial,
-                saldo_posterior=estoque.estoque_final,
+                saldo_anterior=estoque.quantidade - entrada,  # Saldo antes da entrada
+                saldo_posterior=estoque.quantidade,  # Saldo após a entrada
                 observacao=form.observacoes.data or 'Atualização de estoque diário',
                 usuario_id=current_user.id,
                 venda_id=None
